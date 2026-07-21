@@ -7,6 +7,7 @@ import { PostsProvider } from './context/PostsContext'
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
 import Hero from './components/Hero/Hero'
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary'
 
 // App sets up routing and provides the PostsProvider for local state
 export default function App() {
@@ -16,11 +17,13 @@ export default function App() {
         <Hero />
         <Header />
         <main className="app-container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/new" element={<CreatePost />} />
-            <Route path="/post/:id" element={<PostPage />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/new" element={<CreatePost />} />
+              <Route path="/post/:id" element={<PostPage />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
         <Footer />
       </div>

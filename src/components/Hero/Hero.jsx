@@ -24,6 +24,8 @@ export default function Hero() {
 
             gsap.set('#header-logo', { opacity: 0, rotation: 0 });
             gsap.set(disc, { rotation: 0, transformPerspective: 800 });
+            gsap.set(caseWrapRef.current, { transformPerspective: 800, z: 0 });
+            gsap.set(discCaseRef.current, { transformPerspective: 800, z: 0 });
 
             const logoRect = headerLogo.getBoundingClientRect();
             const discRect = disc.getBoundingClientRect();

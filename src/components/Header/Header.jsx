@@ -39,14 +39,9 @@ export default function Header() {
                     <p className={styles.desc}></p>
                 </div>
 
-                <div className={styles.center}>
+                <div className={styles.center}></div>
 
-
-                </div>
-
-                <div className={styles.right}>
-
-                </div>
+                <div className={styles.right}></div>
             </div>
 
 
