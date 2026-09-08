@@ -35,7 +35,6 @@ export default function Home() {
 
   return (
     <div>
-      <Hero />
       <HomeControls query={query} setQuery={setQuery} sort={sort} setSort={setSort} />
 
       <div className="masonry">
