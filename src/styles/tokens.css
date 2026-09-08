@@ -1,0 +1,25 @@
+/* Design tokens — the shared palette/type scale used across the app.
+   Components still hard-code most of these today; migrate them to var(--…)
+   over time so the look stays consistent from one place. */
+:root {
+  /* surfaces */
+  --wiy-bg: #f7f4ef;
+  --wiy-surface: #ffffff;
+  --wiy-surface-alt: #f5f5f5;
+
+  /* ink */
+  --wiy-ink: #1a1714;
+  --wiy-ink-soft: #6b6459;
+  --wiy-ink-faint: #8a7f6e;
+
+  /* lines */
+  --wiy-line: #c8bfaf;
+  --wiy-line-strong: #1a1714;
+
+  /* accent */
+  --wiy-accent: #0037ff;
+
+  /* type */
+  --wiy-font-sans: 'DM Sans', system-ui, sans-serif;
+  --wiy-font-mono: 'DM Mono', ui-monospace, monospace;
+}

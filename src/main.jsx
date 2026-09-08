@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 import Lenis from '@studio-freight/lenis'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const lenis = new Lenis({
   duration: 1.2,
@@ -12,12 +16,11 @@ const lenis = new Lenis({
   syncTouch: true,
 })
 
-function raf(time) {
-  lenis.raf(time)
-  requestAnimationFrame(raf)
-}
-
-requestAnimationFrame(raf)
+// Keep ScrollTrigger (used by the Hero pin/scrub animation) in sync with Lenis'
+// virtual scroll position, and drive Lenis off gsap's ticker so they share a clock.
+lenis.on('scroll', ScrollTrigger.update)
+gsap.ticker.add((time) => lenis.raf(time * 1000))
+gsap.ticker.lagSmoothing(0)
 
 
 createRoot(document.getElementById('root')).render(

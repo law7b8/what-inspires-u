@@ -4,196 +4,185 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
 import styles from './Hero.module.css';
 
+gsap.registerPlugin(ScrollTrigger);
+
 export default function Hero() {
-    const discRef = useRef(null);
-    const discCaseRef = useRef(null);
+    const heroRef = useRef(null);
+    const pinRef = useRef(null);
     const caseWrapRef = useRef(null);
+    const caseImgRef = useRef(null);   // cd1.png — the jewel case, flies away
+    const discRef = useRef(null);      // case body wrapper (spine + case)
     const optionsRef = useRef(null);
+    const hintRef = useRef(null);
+    const ambientRef = useRef(null);   // tempoLogo.png — the disc that keeps spinning
 
     useEffect(() => {
-        gsap.registerPlugin(ScrollTrigger);
+        const ambient = ambientRef.current;
+        const hero = heroRef.current;
+        const pinEl = pinRef.current;
+        if (!ambient || !hero || !pinEl) return;
+        let idleSpin = null;
 
-        const timer = setTimeout(() => {
-            const headerLogo = document.getElementById('header-logo');
-            const disc = discRef.current;
+        const ctx = gsap.context(() => {
+            // where the disc parks once it becomes the background watermark
+            const restX = () => window.innerWidth * 0.27;
+            const restY = () => -window.innerHeight * 0.05;
 
-            if (!disc || !headerLogo) {
-                console.warn('refs missing:', { disc, headerLogo });
-                return;
-            }
+            gsap.set(ambient, { xPercent: -50, yPercent: -50, transformPerspective: 900 });
 
-            gsap.set('#header-logo', { opacity: 0, rotation: 0 });
-            gsap.set(disc, { rotation: 0, transformPerspective: 800 });
-            gsap.set(caseWrapRef.current, { transformPerspective: 800, z: 0 });
-            gsap.set(discCaseRef.current, { transformPerspective: 800, z: 0 });
+            const mm = gsap.matchMedia();
 
-            const logoRect = headerLogo.getBoundingClientRect();
-            const discRect = disc.getBoundingClientRect();
-
-            const targetX = logoRect.left - discRect.left + (logoRect.width / 2 - discRect.width / 2);
-            const targetY = logoRect.top - discRect.top + (logoRect.height / 2 - discRect.height / 2);
-            const targetScale = logoRect.width / discRect.width;
-
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: '#hero',
-                    start: 'top top',
-                    end: '+=100%',        // pin for one full viewport height of scroll
-                    pin: true,            // locks the hero in place while you scroll
-                    scrub: 0.5,
-                    snap: {
-                        snapTo: 1,          // snap to end when close enough
-                        duration: 0.2,
-                        ease: 'power2.inOut',
-                    },
-                    onLeave: () => {
-                        gsap.set(disc, { opacity: 0.13, transformPerspective: 800 });
-                        gsap.to(disc, {
-                            rotationX: '+=360',
-                            rotationY: '+=360',
-                            rotationZ: '+=360',
-                            duration: 15,
-                            ease: 'none',
-                            repeat: -1,
-                        });
-                        gsap.set('#header-logo', { opacity: 0.13, transformPerspective: 800 });
-                        gsap.to('#header-logo', {
-                            rotationX: '+=360',
-                            rotationY: '+=360',
-                            rotationZ: '+=360',
-                            duration: 15,
-                            ease: 'none',
-                            repeat: -1,
-                        });
-                    },
-                    onEnterBack: () => {
-                        gsap.killTweensOf(disc);
-                        gsap.killTweensOf('#header-logo');
-                        gsap.set(disc, { opacity: 0 });
-                        gsap.set('#header-logo', { opacity: 0 });
-                    }
-                }
+            // ── reduced motion: no scroll hijack, just a slow XYZ tumble ──
+            mm.add('(prefers-reduced-motion: reduce)', () => {
+                gsap.set(ambient, { opacity: 0.12, scale: 2.15, x: restX(), y: restY() });
+                idleSpin = gsap.to(ambient, {
+                    rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360',
+                    duration: 40, ease: 'none', repeat: -1,
+                });
+                return () => idleSpin && idleSpin.kill();
             });
 
-            tl
-                .to(caseWrapRef.current, {
-                    scale: 0.7,
-                    z: -400,
-                    opacity: 0,
-                    ease: 'none',
-                }, 0)
+            // ── full experience ──
+            mm.add('(prefers-reduced-motion: no-preference)', () => {
+                gsap.set(caseWrapRef.current, { transformPerspective: 900 });
+                gsap.set(caseImgRef.current, { transformPerspective: 900 });
+                gsap.set(ambient, {
+                    opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
+                });
 
-                // case image flies back independently
-                .to(discCaseRef.current, {
-                    z: -500,
-                    scale: 0.5,
-                    opacity: 0,
-                    ease: 'none',
-                }, 0)
+                // the disc's forever tumble on all three axes (the old animation).
+                // hands off seamlessly from the scroll: it starts fast — matching
+                // whatever fling the scroll gave it — then eases to its resting speed.
+                function startIdleSpin(scrollV = 0) {
+                    if (idleSpin) return;
+                    idleSpin = gsap.to(ambient, {
+                        rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360',
+                        duration: 15, ease: 'none', repeat: -1,
+                    });
+                    const boost = gsap.utils.clamp(0, 6, Math.abs(scrollV) / 500);
+                    if (boost > 0.1) {
+                        idleSpin.timeScale(1 + boost);
+                        gsap.to(idleSpin, { timeScale: 1, duration: 3, ease: 'power2.out' });
+                    }
+                }
 
-                // disc comes forward
-                .to(disc, {
-                    scale: 1.4,
-                    z: 300,
-                    ease: 'none',
-                }, 0)
-                .to(disc, {
-                    x: targetX,
-                    y: targetY,
-                    scale: targetScale,
-                    opacity: 0,
-                    rotationX: 180,
-                    rotationY: 180,
-                    rotationZ: 180,
-                    ease: 'none',
-                }, 0)
-                .to('#header-logo', { opacity: 1, ease: 'none' }, 0)
-                .to(optionsRef.current, { x: -60, opacity: 0 }, 0)
-                .to(caseWrapRef.current, { x: 40, opacity: 0 }, 0);
-            ScrollTrigger.refresh();
-        }, 100);
+                // scrubbing back up into the hero — stop the tumble and re-sync the
+                // disc to where the scroll timeline expects it, so the scrub resumes clean
+                function reclaim() {
+                    if (idleSpin) { gsap.killTweensOf(idleSpin); idleSpin.kill(); idleSpin = null; }
+                    gsap.set(ambient, { rotationX: 18, rotationY: 16, rotationZ: 340 });
+                }
+
+                const tl = gsap.timeline({
+                    defaults: { ease: 'none' },
+                    scrollTrigger: {
+                        trigger: hero,
+                        start: 'top top',
+                        end: () => '+=' + Math.round(window.innerHeight * 1.4),
+                        // pin an inner element (not the <section> React owns) so the
+                        // pin-spacer wrapper never fights React on unmount
+                        pin: pinEl,
+                        pinSpacing: true,
+                        scrub: 1,
+                        invalidateOnRefresh: true,
+                        onLeave: (self) => startIdleSpin(self.getVelocity()),
+                        onEnterBack: reclaim,
+                        onLeaveBack: reclaim,
+                    },
+                });
+
+                tl
+                    // act 1 — the case opens and drops away in 3D
+                    .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0 }, 0)
+                    .to(caseImgRef.current, { z: -520, scale: 0.5, opacity: 0 }, 0)
+                    .to(discRef.current, { scale: 1.35, z: 240, opacity: 0, rotationX: 160, rotationY: 200 }, 0)
+                    .to(optionsRef.current, { x: -70, opacity: 0, duration: 0.55 }, 0)
+                    .to(hintRef.current, { opacity: 0, duration: 0.12 }, 0)
+                    // the disc — spins with the scroll and tilts in 3D as it comes
+                    // forward (never edge-on, so the intro never goes blank), then
+                    // blooms into the big faint background watermark, where it picks
+                    // up the full XYZ tumble
+                    .to(ambient, { rotationZ: 340, duration: 1 }, 0)
+                    .to(ambient, { scale: 1.5, z: 170, rotationX: 34, rotationY: -28, opacity: 0.58, duration: 0.5 }, 0)
+                    .to(ambient, { scale: 2.15, x: restX, y: restY, rotationX: 18, rotationY: 16, opacity: 0.16, duration: 0.5 }, 0.5);
+
+                return () => reclaim();
+            });
+        }, hero);
+
+        // make sure ScrollTrigger measured the pin after layout/fonts settle
+        const refresh = setTimeout(() => ScrollTrigger.refresh(), 200);
 
         return () => {
-            clearTimeout(timer);
-            ScrollTrigger.getAll().forEach(t => t.kill());
+            clearTimeout(refresh);
+            ctx.revert();
         };
     }, []);
 
     return (
-        <section className={styles.hero} id="hero">
+        <>
+            <section className={styles.hero} id="hero" ref={heroRef}>
+              <div className={styles.pinInner} ref={pinRef}>
 
-            <div className={styles.caseWrap} ref={caseWrapRef}>
+                <div className={styles.caseWrap} ref={caseWrapRef}>
 
-                {/* options — left side */}
-                <div className={styles.options} ref={optionsRef}>
+                    {/* options — left side */}
+                    <div className={styles.options} ref={optionsRef}>
+                        <a
+                            href="https://tmp3o.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.topbarLink}
+                        >
+                            tmp3o.com
+                        </a>
 
-
-                    {/*}
-                    
-                        can be used for sorting options later\
-
-                    <Link to="/?sort=newest" className={`${styles.opt} ${styles.optActive}`}>newest</Link>
-                    <Link to="/?sort=most" className={styles.opt}>most liked</Link>
-                    <Link to="/?sort=random" className={styles.opt}>random</Link>
-                    <Link to="/new" className={styles.opt}>+ share</Link>
-                    ///
-
-                    */}
-
-                    <a
-                        href="https://tmp3o.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.topbarLink}
-                    >
-                        tmp3o.com
-                    </a>
-
-                    <Link to="/" className={styles.titleLink}>
-                        <h1 className={styles.title}>
-                            WHAT INSPIRES <span>U?</span>
-                        </h1>
-                    </Link>
-                </div>
-
-
-
-
-                {/* cd case body */}
-                <div className={styles.caseBody}>
-                    <div className={styles.discSlot}>
-
-                        <div className={styles.disc} ref={discRef}>
-                            {/* cd spine */}
-                            <div className={styles.spine}>
-                                <span className={styles.spineText}>+TEMPO · what inspires u</span>
-                            </div>
-                            <img
-                                src="/cd1.png"
-                                className={styles.discCase}
-                                ref={discCaseRef}
-                                alt=""
-                                aria-hidden="true"
-                            />
-                            <img
-                                src="/tempoLogo.png"
-                                className={styles.discLogo}
-                                alt=""
-                                aria-hidden="true"
-                            />
-                        </div>
-
+                        <Link to="/" className={styles.titleLink}>
+                            <h1 className={styles.title}>
+                                WHAT INSPIRES <span>U?</span>
+                            </h1>
+                        </Link>
                     </div>
+
+                    {/* cd case body */}
+                    <div className={styles.caseBody}>
+                        <div className={styles.discSlot}>
+                            <div className={styles.disc} ref={discRef}>
+                                {/* cd spine */}
+                                <div className={styles.spine}>
+                                    <span className={styles.spineText}>+TEMPO · what inspires u</span>
+                                </div>
+                                <img
+                                    src="/cd1.png"
+                                    className={styles.discCase}
+                                    ref={caseImgRef}
+                                    alt=""
+                                    aria-hidden="true"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-            </div>
+                {/* scroll hint */}
+                <div className={styles.scrollHint} ref={hintRef}>
+                    <span>scroll</span>
+                    <div className={styles.scrollArrow} />
+                </div>
 
-            {/* scroll hint */}
-            <div className={styles.scrollHint}>
-                <span>scroll</span>
-                <div className={styles.scrollArrow} />
-            </div>
+              </div>
+            </section>
 
-        </section>
+            {/* the disc: sits in the case during the intro, then keeps spinning
+                behind the page as a faint watermark */}
+            <img
+                src="/tempoLogo.png"
+                className={styles.ambient}
+                ref={ambientRef}
+                alt=""
+                aria-hidden="true"
+            />
+        </>
     );
 }

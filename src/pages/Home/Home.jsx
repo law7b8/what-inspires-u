@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext';
 import PostCard from '../../components/PostCard/PostCard';
 import HomeControls from '../../components/HomeControls/HomeControls';
-import Hero from '../../components/Hero/Hero';
 
 export default function Home() {
   const { posts, fetchPosts } = usePosts();

@@ -1,6 +1,13 @@
 /* ─── hero section ──────────────────────────────────────── */
 
 .hero {
+  position: relative;
+}
+
+/* the actual pinned element — an inner div (kept in flow so its pin-spacer
+   extends the page), so ScrollTrigger's wrapper never sits between React and
+   the <section> it manages */
+.pinInner {
   height: 100vh;
   min-height: 600px;
   display: flex;
@@ -8,6 +15,8 @@
   justify-content: center;
   position: relative;
   padding: 40px;
+  /* opaque so the pinned intro doesn't show the header bleeding through underneath */
+  background: #f7f4ef;
 }
 
 /* ─── case wrapper ───────────────────────────────────────── */
@@ -194,16 +203,29 @@
   z-index: 500;
 }
 
-.discLogo {
-  position: absolute;
+/* ─── ambient disc ───────────────────────────────────────── */
+/* One element: it reads as the disc inside the case during the
+   scroll intro, then parks and keeps spinning as a faint watermark. */
+.ambient {
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 450px;
-  height: autopx;
-  opacity: 0.8;
-  z-index: 1;
+  width: 440px;
+  max-width: 62vw;
+  height: auto;
+  opacity: 0.85;
+  z-index: 0;
   pointer-events: none;
+  mix-blend-mode: multiply;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .ambient {
+    width: 260px;
+  }
 }
 
 /* ─── scroll hint ────────────────────────────────────────── */

@@ -7,7 +7,8 @@
 
 html {
   height: 100%;
-  scroll-snap-type: y mandatory;
+  /* Native scroll-snap is intentionally not used here: the Hero handles its own
+     snap through GSAP ScrollTrigger, and CSS mandatory snap fights Lenis + the pin. */
   overflow-y: scroll;
   scrollbar-width: none;
 }
