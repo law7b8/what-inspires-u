@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA fallback: react-router handles /new, /post/:id etc. client-side,
+# so every path must serve index.html (otherwise a refresh / direct link 404s)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
