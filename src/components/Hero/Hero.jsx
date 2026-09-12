@@ -45,7 +45,7 @@ export default function Hero() {
             // ── full experience ──
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(caseWrapRef.current, { transformPerspective: 900 });
-                gsap.set(caseImgRef.current, { transformPerspective: 900 });
+                gsap.set(caseImgRef.current, { transformPerspective: 1500 });
                 gsap.set(ambient, {
                     opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
                 });
@@ -73,18 +73,35 @@ export default function Hero() {
                     gsap.set(ambient, { rotationX: 18, rotationY: 16, rotationZ: 340 });
                 }
 
+                // the case's own idle tumble — runs the whole time, independent of
+                // the CSS bob on the wrapper divs. caseWrap/caseImg spin freely on
+                // all three axes since the scroll timeline below never touches their
+                // rotation (only scale/z/opacity); discRef only gets rotationZ since
+                // the fly-off already owns its rotationX/rotationY.
+                const caseTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
+                caseTumble
+                    .to(caseImgRef.current, { rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360', duration: 240 }, 0)
+                    .to(discRef.current, { rotationZ: '+=360', duration: 360 }, 0);
+
                 const tl = gsap.timeline({
                     defaults: { ease: 'none' },
                     scrollTrigger: {
                         trigger: hero,
                         start: 'top top',
-                        end: () => '+=' + Math.round(window.innerHeight * 1.4),
+                        end: () => '+=' + Math.round(window.innerHeight * 0.8),
                         // pin an inner element (not the <section> React owns) so the
                         // pin-spacer wrapper never fights React on unmount
                         pin: pinEl,
                         pinSpacing: true,
                         scrub: 1,
                         invalidateOnRefresh: true,
+                        // once the user stops scrolling mid-transition, ease the
+                        // rest of the way to whichever end (hero or page) is closer
+                        snap: {
+                            snapTo: [0, 1],
+                            duration: { min: 0.25, max: 0.6 },
+                            ease: 'power1.inOut',
+                        },
                         onLeave: (self) => startIdleSpin(self.getVelocity()),
                         onEnterBack: reclaim,
                         onLeaveBack: reclaim,
@@ -106,7 +123,7 @@ export default function Hero() {
                     .to(ambient, { scale: 1.5, z: 170, rotationX: 34, rotationY: -28, opacity: 0.58, duration: 0.5 }, 0)
                     .to(ambient, { scale: 2.15, x: restX, y: restY, rotationX: 18, rotationY: 16, opacity: 0.16, duration: 0.5 }, 0.5);
 
-                return () => reclaim();
+                return () => { reclaim(); caseTumble.kill(); };
             });
         }, hero);
 
@@ -124,7 +141,8 @@ export default function Hero() {
             <section className={styles.hero} id="hero" ref={heroRef}>
               <div className={styles.pinInner} ref={pinRef}>
 
-                <div className={styles.caseWrap} ref={caseWrapRef}>
+                <div className={styles.floatCase}>
+                  <div className={styles.caseWrap} ref={caseWrapRef}>
 
                     {/* options — left side */}
                     <div className={styles.options} ref={optionsRef}>
@@ -146,43 +164,46 @@ export default function Hero() {
 
                     {/* cd case body */}
                     <div className={styles.caseBody}>
-                        <div className={styles.discSlot}>
-                            <div className={styles.disc} ref={discRef}>
-                                {/* cd spine */}
-                                <div className={styles.spine}>
-                                    <span className={styles.spineText}>+TEMPO · what inspires u</span>
-                                </div>
-                                <img
-                                    src="/cd1.png"
-                                    className={styles.discCase}
-                                    ref={caseImgRef}
-                                    alt=""
-                                    aria-hidden="true"
-                                />
-                            </div>
+                        <div className={styles.floatDisc}>
+                          <div className={styles.discSlot}>
+                              <div className={styles.disc} ref={discRef}>
+                                  {/* cd spine */}
+                                  <div className={styles.spine}>
+                                      <span className={styles.spineText}>+TEMPO · what inspires u</span>
+                                  </div>
+                                  <img
+                                      src="/cd1.png"
+                                      className={styles.discCase}
+                                      ref={caseImgRef}
+                                      alt=""
+                                      aria-hidden="true"
+                                  />
+                              </div>
+                          </div>
                         </div>
+                        {/* soft ps3-style contact shadow, pulses with .floatDisc */}
+                        <div className={styles.caseShadow} />
                     </div>
 
-                </div>
-
-                {/* scroll hint */}
-                <div className={styles.scrollHint} ref={hintRef}>
-                    <span>scroll</span>
-                    <div className={styles.scrollArrow} />
+                  </div>
                 </div>
 
               </div>
             </section>
 
             {/* the disc: sits in the case during the intro, then keeps spinning
-                behind the page as a faint watermark */}
-            <img
-                src="/tempoLogo.png"
-                className={styles.ambient}
-                ref={ambientRef}
-                alt=""
-                aria-hidden="true"
-            />
+                behind the page as a faint watermark. Fixed positioning lives on
+                the wrapper so it can bob independently of GSAP's transforms
+                on the image itself. */}
+            <div className={styles.ambientFloat}>
+                <img
+                    src="/tempoLogo.png"
+                    className={styles.ambient}
+                    ref={ambientRef}
+                    alt=""
+                    aria-hidden="true"
+                />
+            </div>
         </>
     );
 }

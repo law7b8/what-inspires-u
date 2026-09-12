@@ -158,7 +158,56 @@
   z-index: -1000;
 }
 
+/* ─── idle float (rest state, ps3-xmb style hover) ──────────
+   Plain CSS animations on wrapper elements, not on the refs GSAP
+   drives — so this bob composes with the scroll timeline instead
+   of fighting it. Different durations/delays per layer so the case,
+   disc, and ambient logo drift slightly out of phase. */
 
+.floatCase {
+  animation: floatBob 20s ease-in-out infinite;
+}
+
+.floatDisc {
+  animation: floatBob 3.4s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+/* soft contact shadow under the case — shrinks and fades as it lifts,
+   timed to match .floatDisc so it reads as that layer's own shadow */
+.caseShadow {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 62%;
+  height: 34px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(20, 16, 10, 0.32) 0%, rgba(20, 16, 10, 0) 72%);
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: -1;
+  animation: shadowPulse 3.4s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
+
+@keyframes shadowPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.85; }
+  50% { transform: translateX(-50%) scale(0.72); opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatCase,
+  .floatDisc,
+  .ambientFloat,
+  .caseShadow {
+    animation: none;
+  }
+}
 
 /* ─── disc ───────────────────────────────────────────────── */
 
@@ -177,7 +226,10 @@
   flex-shrink: 0;
   width: 600px;
   height: 600px;
-  overflow: hidden;
+  /* visible, not hidden: the case image tumbles continuously in 3D
+     (caseTumble in Hero.jsx), so a clipped box chops off its edges
+     mid-rotation instead of just cropping the static overhang */
+  overflow: visible;
 }
 
 .disc::before {
@@ -195,19 +247,33 @@
 
 .discCase {
   position: absolute;
-  top: 50%;
+  top: 48%;
   left: 50%;
   transform: translate(-54%, -50%);
-  width: auto;
+  width: 100%;
   height: 500px;
   z-index: 500;
 }
 
 /* ─── ambient disc ───────────────────────────────────────── */
+/* Fixed positioning lives on the wrapper (.ambientFloat) so it can carry
+   its own CSS bob without fighting GSAP, which drives every transform on
+   the <img> itself (position/rotation/scale) for the scroll intro and the
+   idle tumble. The wrapper spans the full viewport so the image's
+   top/left: 50% still centers exactly as before. */
+.ambientFloat {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  animation: floatBob 5.4s ease-in-out infinite;
+  animation-delay: -2.6s;
+}
+
 /* One element: it reads as the disc inside the case during the
    scroll intro, then parks and keeps spinning as a faint watermark. */
 .ambient {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -215,7 +281,6 @@
   max-width: 62vw;
   height: auto;
   opacity: 0.85;
-  z-index: 0;
   pointer-events: none;
   mix-blend-mode: multiply;
   will-change: transform, opacity;
