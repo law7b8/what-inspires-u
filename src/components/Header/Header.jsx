@@ -4,7 +4,7 @@ import styles from './Header.module.css';
 export default function Header() {
     return (
         <header className={styles.wrapper}>
-            <Link to="/new" className={styles.shareBtn}>
+            <Link to="/new" className={styles.shareBtn} id="header-share">
                 +
             </Link>
 

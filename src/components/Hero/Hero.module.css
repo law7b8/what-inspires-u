@@ -81,8 +81,8 @@
 }
 
 .title {
-  font-size: 48px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 400;
   line-height: 0.95;
   color: #1a1714;
   letter-spacing: -0.01em;
@@ -92,7 +92,7 @@
 }
 
 .title span {
-  font-weight: 500;
+  font-weight: 300;
   color: #6b6459;
 }
 
@@ -169,13 +169,13 @@
 }
 
 .floatDisc {
-  animation: floatBob 3.4s ease-in-out infinite;
+  animation: floatBob 20s ease-in-out infinite;
   animation-delay: -1.4s;
 }
 
 @keyframes floatBob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
+  0%, 50% { transform: translateY(0); }
+  80% { transform: translateY(-5px); }
 }
 
 /* soft contact shadow under the case — shrinks and fades as it lifts,
@@ -224,7 +224,7 @@
   position: relative;
   will-change: transform;
   flex-shrink: 0;
-  width: 600px;
+  width: 500px;
   height: 600px;
   /* visible, not hidden: the case image tumbles continuously in 3D
      (caseTumble in Hero.jsx), so a clipped box chops off its edges
@@ -245,7 +245,12 @@
   pointer-events: none;
 }
 
-.discCase {
+/* wraps the case artwork's front + back layers and is what Hero.jsx's GSAP
+   timelines actually rotate/move (caseTumble + the scroll tl) — the images
+   inside only carry a static Z offset, so they stay correctly stacked in
+   real 3D through every rotation instead of faking an edge with a shadow
+   painted in one fixed direction (which breaks the illusion once it spins). */
+.discCaseGroup {
   position: absolute;
   top: 48%;
   left: 50%;
@@ -253,6 +258,25 @@
   width: 100%;
   height: 500px;
   z-index: 500;
+  transform-style: preserve-3d;
+}
+
+.discCase {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: blur(0.3px);
+  backface-visibility: hidden;
+}
+
+/* the "inner edge" — a darker duplicate of the same artwork sitting behind
+   the front layer in Z. No backface-visibility here (unlike .discCase), so
+   it keeps showing rather than vanishing at the angles where the front
+   layer flips away mid-tumble, reading as the case's own back/edge. */
+.discCaseBack {
+  transform: translateZ(-45px);
+  filter: blur(0.3px) brightness(0.5) saturate(0.6);
 }
 
 /* ─── ambient disc ───────────────────────────────────────── */
@@ -266,29 +290,64 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  animation: floatBob 5.4s ease-in-out infinite;
+  animation: floatBob 20.4s ease-in-out infinite;
   animation-delay: -2.6s;
 }
 
-/* One element: it reads as the disc inside the case during the
-   scroll intro, then parks and keeps spinning as a faint watermark. */
-.ambient {
+/* soft shadow cast by the ambient logo — orbits around center in Hero.jsx's
+   ambientTumble onUpdate, tracking the same rotationX/rotationY driving the
+   logo's spin, so it reads as a shadow from a tumbling 3D object rather than
+   a static blob. Sits behind .ambient via DOM order (painted first). */
+.ambientShadow {
   position: absolute;
   top: 50%;
   left: 50%;
+  width: 280px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(20, 16, 10, 0.35) 0%, rgba(20, 16, 10, 0) 72%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* wraps the logo's front + back layers — reads as the disc inside the case
+   during the scroll intro, then parks and keeps spinning as a faint
+   watermark. This group is what Hero.jsx's GSAP timelines actually
+   rotate/move/fade; the images inside only carry a static Z offset, same
+   real-depth approach as .discCaseGroup. */
+.ambientGroup {
+  position: absolute;
+  top: 52%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 440px;
+  width: 370px;
   max-width: 62vw;
-  height: auto;
-  opacity: 0.85;
+  height: 370px;
   pointer-events: none;
   mix-blend-mode: multiply;
   will-change: transform, opacity;
+  transform-style: preserve-3d;
+}
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
   backface-visibility: hidden;
 }
 
+/* the logo's "inner edge" — same idea as .discCaseBack: a darker duplicate
+   behind the front layer in Z, always visible (no backface-visibility) so
+   it reads as depth rather than a flat sticker as the logo tumbles. */
+.ambientBack {
+  transform: translateZ(-28px);
+  filter: brightness(0.45) saturate(0.6);
+}
+
 @media (max-width: 768px) {
-  .ambient {
+  .ambientGroup {
     width: 260px;
   }
 }
@@ -356,6 +415,13 @@
     top: auto;
   }
 
+  /* .options goes position:static above (in-flow) but .caseWrap is still
+     display:flex with the default row direction, so options sat beside
+     caseBody instead of stacked above it, pushing the case off-center */
+  .caseWrap {
+    flex-direction: column;
+  }
+
   .hero {
     flex-direction: column;
     justify-content: center;
@@ -379,6 +445,13 @@
 
   .discSlot {
     width: 200px;
+    height: 200px;
+  }
+
+  /* .discCaseGroup's base rule hardcodes height: 500px (no override existed
+     here even before the front/back-layer refactor) — on a 200px-wide .disc
+     that left it a 200×500 box, badly oversized and shifted off-screen */
+  .discCaseGroup {
     height: 200px;
   }
 }
