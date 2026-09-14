@@ -95,6 +95,26 @@ export default function Hero() {
                 ambientTumble
                     .to(ambientGroup, { rotationX: '-=360', rotationY: '-=360', rotationZ: '+=360', duration: 70 }, 0);
 
+                // makes scrolling itself visibly spin the disc faster, without
+                // competing with ambientTumble for the same rotation properties
+                // (two tweens fighting over rotationX/Y/Z would jitter) — instead
+                // this just speeds up ambientTumble's own playback rate based on
+                // scroll speed. Doesn't rely on onUpdate firing again to settle
+                // back down (it may not, once real scrolling actually stops) —
+                // explicitly eases timeScale back to 1 a beat after the last
+                // update, debounced so a burst of scroll events during active
+                // scrolling doesn't pile up competing decay tweens.
+                let spinDecayTimer = null;
+                function boostSpinFromScroll(velocity) {
+                    const boost = gsap.utils.clamp(0, 6, Math.abs(velocity) / 500);
+                    gsap.killTweensOf(ambientTumble);
+                    ambientTumble.timeScale(1 + boost);
+                    clearTimeout(spinDecayTimer);
+                    spinDecayTimer = setTimeout(() => {
+                        gsap.to(ambientTumble, { timeScale: 1, duration: 1.2, ease: 'power2.out' });
+                    }, 120);
+                }
+
                 // hands the reveal off to the Header once the disc's scroll
                 // animation is fully done — the ids are Header's own hooks for
                 // this (see the comment in App.jsx). #header-logo is deliberately
@@ -148,6 +168,8 @@ export default function Hero() {
                         // hides the header again if the user scrolls back up.
                         onLeave: popInHeader,
                         onEnterBack: hideHeaderAgain,
+                        // ties the disc's spin rate to how fast you're scrolling
+                        onUpdate: (self) => boostSpinFromScroll(self.getVelocity()),
                     },
                 });
 
@@ -163,14 +185,6 @@ export default function Hero() {
                     .to(discRef.current, { scale: 1.1, z: 30, opacity: 0, rotationX: 160, rotationY: 160, duration: 0.3 }, 0)
                     .to(optionsRef.current, { x: 0, opacity: 0, duration: 0.33 }, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.07 }, 0)
-                    // the disc — comes forward and blooms into the big faint
-                    // background watermark; rotation is ambientTumble's job the
-                    // whole time, so this only ever drives position/scale/opacity.
-                    // this first bloom step mirrors caseImgGroupRef's { z: -520,
-                    // scale: 0.5, opacity: 0 } in the opposite direction: comes
-                    // toward the viewer instead of receding, grows instead of
-                    // shrinking, and gets more opaque instead of fading out.
-                    .to(ambientGroup, { scale: 1.4, z: 520, opacity: 1, duration: 0.15 }, 0)
                     // act 2 — now finishes at 33% of the scroll (was 100%), landing
                     // at the same moment optionsRef finishes fading out above,
                     // instead of the disc taking the whole scroll to park.
@@ -179,6 +193,7 @@ export default function Hero() {
                     .to(ambientGroup, { scale: 1.2, x: restX, y: restY, opacity: 0.16, duration: 0.18 }, 0.33);
 
                 return () => {
+                    clearTimeout(spinDecayTimer);
                     caseTumble.kill();
                     ambientTumble.kill();
                     // don't leave the Header's own elements stuck invisible if
