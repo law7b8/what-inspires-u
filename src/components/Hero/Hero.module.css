@@ -27,7 +27,11 @@
   gap: 0;
   position: relative;
   will-change: transform;
-  transition: transform 0.05s linear;
+  /* no CSS transition on transform here — GSAP (scroll timeline + the
+     mouse-parallax quickTo in Hero.jsx) sets this element's transform
+     every animation frame; a CSS transition on the same property would
+     re-animate each of those frame updates on top of GSAP's own easing,
+     fighting it instead of smoothing anything. */
 }
 
 /* ─── options (left column) ──────────────────────────────── */
@@ -44,7 +48,7 @@
 }
 
 .opt {
-  font-family: 'DM Mono', monospace;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 11px;
   letter-spacing: 0.1em;
   color: #6b6459;
@@ -137,8 +141,8 @@
 }
 
 .spineText {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 20px;
   letter-spacing: 0.2em;
   color: #716e8a;
   writing-mode: vertical-rl;
@@ -149,8 +153,8 @@
 /* ─── case body ──────────────────────────────────────────── */
 
 .caseBody {
-  width: 500px;
-  height: 500px;
+  width: auto;
+  height: auto;
   position: relative;
   display: flex;
   align-items: center;
@@ -252,9 +256,14 @@
    painted in one fixed direction (which breaks the illusion once it spins). */
 .discCaseGroup {
   position: absolute;
-  top: 48%;
-  left: 50%;
-  transform: translate(-54%, -50%);
+  top: 49%;
+  left: 46%;
+  /* was translate(-54%, -50%) — the extra 4% (~20px on the 500px case) was
+     an unexplained leftward nudge with nothing else in this file justifying
+     it, unlike .ambientGroup's identical front/back-layer setup below, which
+     centers with a plain, symmetric -50%/-50%. That's what was reading as
+     "the case is shifted left, not centered." */
+  transform: translate(-50%, -50%);
   width: 100%;
   height: 500px;
   z-index: 500;
@@ -266,7 +275,15 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  filter: blur(0.3px);
+  /* no filter here (was blur(0.3px)) — combining `filter` with
+     `backface-visibility: hidden` on a continuously 3D-rotated element
+     hits a real Chromium/WebKit compositing bug where the element gets
+     stuck invisible once it first flips past 90°, even after rotating
+     back to face-on. That's the "one of the case images disappears and
+     never comes back" bug — this layer only needs the culling, not the
+     blur (discCaseBack still carries its own blur safely, since it has
+     no backface-visibility to interact with). */
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
@@ -292,6 +309,17 @@
   pointer-events: none;
   animation: floatBob 20.4s ease-in-out infinite;
   animation-delay: -2.6s;
+}
+
+/* mouse-parallax layer — sits between .ambientFloat (CSS bob, fixed) and
+   .ambientGroup (GSAP-owned x/y/scale/rotation). Kept as its own element
+   so the cursor-driven drift (translate only, set in Hero.jsx) never
+   fights the properties the scroll timeline/idle tumble already own on
+   ambientGroup itself. */
+.ambientParallax {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
 }
 
 /* soft shadow cast by the ambient logo — orbits around center in Hero.jsx's
@@ -335,6 +363,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
@@ -359,7 +388,7 @@
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'DM Mono', monospace;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 10px;
   letter-spacing: 0.18em;
   color: #8a7f6e;

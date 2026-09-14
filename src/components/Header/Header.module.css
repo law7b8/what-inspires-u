@@ -1,11 +1,16 @@
 /* ─── wrapper ───────────────────────────────────────────── */
 
 .wrapper {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     position: relative;
-    margin-top: auto;
     width: 100%;
-    height: 100vh;
+    /* no fixed height here (was height: 100vh + margin-top: auto — the
+       latter looks like copy-paste residue from Footer's own sticky-footer
+       margin, since Header isn't meant to be pushed to the bottom of
+       anything). Forcing a full viewport tall box left a permanent blank
+       gap below the header's actual (much shorter) content on every page,
+       not just Home — that was the "extra room at the bottom" people were
+       scrolling through. Let it size to its content instead. */
 }
 
 /* ─── topbar ────────────────────────────────────────────── */
@@ -15,7 +20,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 9px 28px;
-    font-family: 'DM Mono', monospace;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 11px;
     letter-spacing: 0.08em;
     color: #6b6459;
@@ -68,7 +73,7 @@
 }
 
 .label {
-    font-family: 'DM Mono', monospace;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     letter-spacing: 0.16em;
     color: #8a7f6e;
@@ -171,7 +176,7 @@
 }
 
 .subtitle {
-    font-family: 'DM Mono', monospace;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     letter-spacing: 0.18em;
     color: #8a7f6e;
@@ -190,7 +195,7 @@
 }
 
 .shareBtn {
-    font-family: 'DM Mono', monospace;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 75px;
     color: #000000;
     border: none;
@@ -206,7 +211,7 @@
 }
 
 .monoLabel {
-    font-family: 'DM Mono', monospace;
+    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     color: #8a7f6e;
     letter-spacing: 0.1em;

@@ -9,6 +9,17 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// Browsers try to restore the previous scroll position on refresh by default
+// (history.scrollRestoration === 'auto'). Since Lenis keeps its own virtual
+// scroll state layered on top of native scroll, a restored position can leave
+// the two out of sync — and either way, refreshing should land back at the
+// top of the site, not wherever you'd scrolled to. Must run before the Lenis
+// instance below is created, so it reads a scroll position of 0.
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual'
+}
+window.scrollTo(0, 0)
+
 const lenis = new Lenis({
   duration: 1.2,
   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),

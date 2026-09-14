@@ -2,7 +2,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'DM Sans', sans-serif;
+  /* no @font-face/Google Fonts link exists anywhere in this project for 'DM
+     Sans'/'DM Mono' — every element was already silently falling back to the
+     browser's generic sans-serif/monospace the whole time. MS Sans Serif is
+     a legacy Windows font (not bundled here, not installed on most non-
+     Windows machines), so this is a best-effort name + fallback stack rather
+     than a guaranteed exact match. */
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
 }
 
 html {
