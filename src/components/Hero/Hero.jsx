@@ -13,6 +13,11 @@ export default function Hero() {
     const caseImgGroupRef = useRef(null); // cd1.png front+back layers — the jewel case, flies away
     const discRef = useRef(null);      // case body wrapper (spine + case)
     const optionsRef = useRef(null);
+    const tmp3oTextRef = useRef(null); // typed in on mount — see the typewriter effect below
+    const titleTextRef = useRef(null); // "what inspires u?" — same typewriter loop, one plain span (no separate accent styling)
+    const sideImageGroupRef = useRef(null);  // your inserted image — spins like the case/logo
+    const sideImageShadowRef = useRef(null);  // separate element, spins on Y only, no z-offset
+    const sideImageShadow2Ref = useRef(null); // a second one, same idea, own independent phase
     const hintRef = useRef(null);
     const ambientGroupRef = useRef(null);  // tempoLogo.png front+back layers — the disc that keeps spinning
     const ambientShadowRef = useRef(null); // soft shadow that orbits in sync with it
@@ -57,6 +62,65 @@ export default function Hero() {
             gsap.set(ambientGroup, { xPercent: -50, yPercent: -50, transformPerspective: 900 });
             if (ambientShadow) gsap.set(ambientShadow, { xPercent: -50, yPercent: -50, opacity: 0.3 });
 
+            // ── typewriter loop for the options text — "tmp3o.com" types
+            // in, holds, untypes, then "what inspires u?" does the same,
+            // forever (repeat: -1). Runs regardless of the reduced-motion
+            // branches below since it's not part of the scroll-hijack
+            // experience — but it's still motion, so it's skipped in favor
+            // of static finished text when the user has that preference
+            // (an infinite loop is exactly the kind of thing reduced-motion
+            // is meant to opt out of). aria-label on the <a>/<Link>
+            // ancestors (in the JSX below) carries the real, complete text
+            // at all times, so screen readers announce "tmp3o.com" / "what
+            // inspires u?" once rather than replaying every type/untype
+            // cycle as textContent gets rewritten.
+            //
+            // Duration is per-character (not a fixed duration per line), so
+            // the longer title text still reads at the same typing *speed*
+            // as the shorter tmp3o.com line instead of visibly rushing to
+            // fit the same duration.
+            const CHAR_TYPE_DURATION = 0.145;   // seconds per character while typing
+            const CHAR_UNTYPE_DURATION = 0.245; // untyping reads better a little quicker
+            const HOLD_DURATION = 1.6;          // pause once a line is fully typed
+            const LINE_GAP = 0.35;              // pause on the empty state before the next line starts
+
+            function typeInto(el, text, charDuration) {
+                if (!el) return null;
+                const proxy = { chars: 0 };
+                return gsap.to(proxy, {
+                    chars: text.length,
+                    duration: text.length * charDuration,
+                    ease: 'none',
+                    onUpdate: () => { el.textContent = text.slice(0, Math.round(proxy.chars)); },
+                });
+            }
+            function untypeFrom(el, text, charDuration) {
+                if (!el) return null;
+                const proxy = { chars: text.length };
+                return gsap.to(proxy, {
+                    chars: 0,
+                    duration: text.length * charDuration,
+                    ease: 'none',
+                    onUpdate: () => { el.textContent = text.slice(0, Math.round(proxy.chars)); },
+                });
+            }
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                if (tmp3oTextRef.current) tmp3oTextRef.current.textContent = 'tmp3o.com';
+                if (titleTextRef.current) titleTextRef.current.textContent = '+archive.cd';
+            } else {
+                if (optionsRef.current) optionsRef.current.setAttribute('data-typing', '');
+                gsap.timeline({ repeat: -1, delay: 0.4 })
+                    .add(typeInto(tmp3oTextRef.current, 'tmp3o.com', CHAR_TYPE_DURATION))
+                    .to({}, { duration: HOLD_DURATION })
+                    .add(untypeFrom(tmp3oTextRef.current, 'tmp3o.com', CHAR_UNTYPE_DURATION))
+                    .to({}, { duration: LINE_GAP })
+                    .add(typeInto(titleTextRef.current, '+archive.cd', CHAR_TYPE_DURATION))
+                    .to({}, { duration: HOLD_DURATION })
+                    .add(untypeFrom(titleTextRef.current, '+archive.cd', CHAR_UNTYPE_DURATION))
+                    .to({}, { duration: LINE_GAP });
+            }
+
             const mm = gsap.matchMedia();
 
             // ── reduced motion: no scroll hijack, just a slow XYZ tumble ──
@@ -74,6 +138,9 @@ export default function Hero() {
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(caseWrapRef.current, { transformPerspective: 900 });
                 gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
+                gsap.set(sideImageGroupRef.current, { transformPerspective: 900 });
+                gsap.set(sideImageShadowRef.current, { transformPerspective: 900 });
+                gsap.set(sideImageShadow2Ref.current, { transformPerspective: 900 });
                 gsap.set(ambientGroup, {
                     opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
                 });
@@ -96,6 +163,62 @@ export default function Hero() {
                 ambientTumble
                     .to(ambientGroup, { rotationX: '-=360', rotationY: '-=360', rotationZ: '+=360', duration: 70 }, 0);
 
+                // the side image's own forever tumble — same idea again: spins
+                // continuously from mount, nothing else ever touches its
+                // rotation, so there's nothing for it to fight with.
+                const sideImageTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
+                sideImageTumble
+                    .to(sideImageGroupRef.current, { rotationY: '+=360', duration: 900 }, 0)
+                    .to(sideImageGroupRef.current, { rotationZ: '-=360', duration: 900 }, 0)
+                    .to(sideImageGroupRef.current, { rotationX: '-=360', duration: 200 }, 0);
+
+                // the shadow layer is a separate element now, not a child of
+                // sideImageGroupRef (same reasoning as ambientShadow being a
+                // sibling of ambientGroup, not nested inside it) — spinning it
+                // the opposite way on Y only, at the same speed, needs its own
+                // independent rotation rather than inheriting the front
+                // layer's, which a nested child can't do (it would just
+                // compose on top of whatever the parent is doing, not counter
+                // it).
+                const sideImageShadowTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
+                sideImageShadowTumble
+                    .to(sideImageShadowRef.current, { rotationY: '-=360', duration: 40 }, 0);
+                sideImageShadowTumble.progress(0.25); // starts already halfway through its cycle, out of phase with the front layer instead of both beginning aligned at mount
+
+                // a second shadow layer, same idea again — its own independent
+                // tumble at a different phase again (0.6, vs. the first
+                // shadow's 0.25) so the two shadows don't just sit stacked on
+                // top of each other; between the front layer and both
+                // shadows, all three are now out of phase with one another.
+                const sideImageShadow2Tumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
+                sideImageShadow2Tumble
+                    .to(sideImageShadow2Ref.current, { rotationY: '-=360', duration: 20 }, 0);
+                sideImageShadow2Tumble.progress(0.6);
+
+                // ── spin boosters — both perpetual tumbles (caseTumble,
+                // ambientTumble) can be sped up temporarily by whatever's
+                // currently driving them: scroll speed, or cursor speed while it
+                // sweeps over the element (both further below). Each timeline
+                // gets its own booster with its own independent decay-back-to-1
+                // timer, so the two input sources never need to coordinate —
+                // whichever fires most recently just nudges timeScale, and it
+                // eases back to 1x a beat after that source goes quiet.
+                function createSpinBooster(timeline) {
+                    let decayTimer = null;
+                    function boost(amount) {
+                        gsap.killTweensOf(timeline);
+                        timeline.timeScale(1 + amount);
+                        clearTimeout(decayTimer);
+                        decayTimer = setTimeout(() => {
+                            gsap.to(timeline, { timeScale: 1, duration: 1.2, ease: 'power2.out' });
+                        }, 120);
+                    }
+                    boost.cancel = () => clearTimeout(decayTimer);
+                    return boost;
+                }
+                const boostAmbientSpin = createSpinBooster(ambientTumble);
+                const boostCaseSpin = createSpinBooster(caseTumble);
+
                 // ── mouse parallax — the case and the ambient disc/logo drift
                 // gently toward the cursor, measured from true viewport center
                 // (0,0 dead-center, ±1 at the edges). Nothing moves until the
@@ -116,15 +239,55 @@ export default function Hero() {
                 // driven by the scroll timeline (parking it as the background
                 // watermark) — a separate wrapper lets the two offsets add
                 // together in screen space instead of racing.
-                const PARALLAX_EASE = 'power3';
+                const PARALLAX_EASE = 'power2.out';
                 const CASE_PARALLAX_DURATION = 0.9;    // foreground case — heavier, slower to catch up
                 const AMBIENT_PARALLAX_DURATION = 0.6; // background watermark — a touch snappier
-                const PARALLAX_RANGE = 44;             // px of max drift at full cursor travel from center — shared by both
+                const PARALLAX_RANGE = 8;             // px of max drift at full cursor travel from center — shared by both
 
                 const caseParallaxX = gsap.quickTo(caseWrapRef.current, 'x', { duration: CASE_PARALLAX_DURATION, ease: PARALLAX_EASE });
                 const caseParallaxY = gsap.quickTo(caseWrapRef.current, 'y', { duration: CASE_PARALLAX_DURATION, ease: PARALLAX_EASE });
                 const ambientParallaxX = gsap.quickTo(ambientParallaxRef.current, 'x', { duration: AMBIENT_PARALLAX_DURATION, ease: PARALLAX_EASE });
                 const ambientParallaxY = gsap.quickTo(ambientParallaxRef.current, 'y', { duration: AMBIENT_PARALLAX_DURATION, ease: PARALLAX_EASE });
+
+                // ── mouse-speed spin — sweeping the cursor across the case or
+                // the ambient logo spins that element's own tumble faster,
+                // scaled to how fast the cursor is actually moving at that
+                // instant (not merely "is it hovering"). Hit-tested by hand via
+                // getBoundingClientRect rather than native pointerenter/leave on
+                // the elements themselves, because .ambientGroup/.ambient/
+                // .ambientFloat are deliberately pointer-events: none (so the
+                // fixed, page-spanning watermark logo never blocks clicks on
+                // real content once it's parked there) — an element with
+                // pointer-events: none can never be a hover/pointer target, so
+                // native hover events would simply never fire on it. A plain
+                // global mousemove + rect math isn't blocked by that, and works
+                // identically for the case (which carries no such restriction).
+                const MOUSE_SPIN_SPEED_RANGE = 3000; // px/s of cursor travel that maps to max spin boost
+                let lastPointerX = null;
+                let lastPointerY = null;
+                let lastPointerTime = null;
+                function isPointInRect(x, y, el) {
+                    if (!el) return false;
+                    const rect = el.getBoundingClientRect();
+                    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+                }
+                function boostSpinFromMouseSpeed(e) {
+                    if (lastPointerTime !== null) {
+                        const dt = e.timeStamp - lastPointerTime;
+                        if (dt > 0) {
+                            const dist = Math.hypot(e.clientX - lastPointerX, e.clientY - lastPointerY);
+                            const speed = (dist / dt) * 1000; // px/s
+                            const boost = gsap.utils.clamp(0, 6, speed / MOUSE_SPIN_SPEED_RANGE);
+                            if (boost > 0) {
+                                if (isPointInRect(e.clientX, e.clientY, discRef.current)) boostCaseSpin(boost);
+                                if (isPointInRect(e.clientX, e.clientY, ambientGroupRef.current)) boostAmbientSpin(boost);
+                            }
+                        }
+                    }
+                    lastPointerX = e.clientX;
+                    lastPointerY = e.clientY;
+                    lastPointerTime = e.timeStamp;
+                }
 
                 function handleMouseMove(e) {
                     const offsetX = gsap.utils.clamp(-1, 1, (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2));
@@ -133,27 +296,16 @@ export default function Hero() {
                     caseParallaxY(offsetY * PARALLAX_RANGE);
                     ambientParallaxX(offsetX * PARALLAX_RANGE);
                     ambientParallaxY(offsetY * PARALLAX_RANGE);
+                    boostSpinFromMouseSpeed(e);
                 }
                 window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-                // makes scrolling itself visibly spin the disc faster, without
-                // competing with ambientTumble for the same rotation properties
-                // (two tweens fighting over rotationX/Y/Z would jitter) — instead
-                // this just speeds up ambientTumble's own playback rate based on
-                // scroll speed. Doesn't rely on onUpdate firing again to settle
-                // back down (it may not, once real scrolling actually stops) —
-                // explicitly eases timeScale back to 1 a beat after the last
-                // update, debounced so a burst of scroll events during active
-                // scrolling doesn't pile up competing decay tweens.
-                let spinDecayTimer = null;
+                // makes scrolling itself visibly spin the disc faster — routes
+                // through the same booster mouse-speed uses above, so scroll and
+                // cursor speed never fight over ambientTumble's timeScale
+                // directly; they just both nudge the one shared booster.
                 function boostSpinFromScroll(velocity) {
-                    const boost = gsap.utils.clamp(0, 6, Math.abs(velocity) / 500);
-                    gsap.killTweensOf(ambientTumble);
-                    ambientTumble.timeScale(1 + boost);
-                    clearTimeout(spinDecayTimer);
-                    spinDecayTimer = setTimeout(() => {
-                        gsap.to(ambientTumble, { timeScale: 1, duration: 1.2, ease: 'power2.out' });
-                    }, 120);
+                    boostAmbientSpin(gsap.utils.clamp(0, 6, Math.abs(velocity) / 500));
                 }
 
                 // hands the reveal off to the Header once the disc's scroll
@@ -192,34 +344,30 @@ export default function Hero() {
                 // the timeline's own total duration: there's no extra runway of
                 // scroll after the disc lands where nothing is visibly changing
                 // (that dead stretch was the "have to scroll more to get it" gap).
-                //
-                // ACT2 is back to running right after ACT1 (not overlapping deep
-                // into it, like the previous pass) — starting the disc's move to
-                // its resting spot while the case artwork was still fully on
-                // screen made the two visually mismatch/desync, since they're
-                // supposed to read as one object (the disc "inside" the case)
-                // until the case is actually gone. "Show sooner" instead comes
-                // from shrinking BOTH acts' own durations and the physical scroll
-                // distance by the same ratio (~0.63 tl-units per viewport-height,
-                // same as the last "slow it down" pass) — that needs less total
-                // scrolling without changing how steep/rushed any single tween
-                // feels per pixel scrolled, and keeps the handoff between case and
-                // disc sequential instead of overlapping.
                 const ACT1_DURATION = 0.05;
                 const ACT2_START = 0.0;       // small gap after ACT1, same as the original design
                 const ACT2_DURATION = 0.10;
-                const ACT2_END = ACT2_START + ACT2_DURATION; // = 0.47, the timeline's total duration
+                const ACT2_END = ACT2_START + ACT2_DURATION; // = 0.10, the timeline's total duration
 
                 const tl = gsap.timeline({
                     defaults: { ease: 'none' },
                     scrollTrigger: {
                         trigger: hero,
                         start: 'top top',
-                        // shrunk in the same proportion as the act durations above,
-                        // so scroll-pixels-per-unit-of-motion stays the same as the
-                        // "slow it down" pass — less total scrolling needed, same
-                        // pace throughout.
-                        end: () => '+=' + Math.round(window.innerHeight * 0.8),
+                        // ScrollTrigger always maps scroll progress 0→1 onto the
+                        // timeline's own duration (ACT2_END, 0.10) no matter what
+                        // physical distance is set here — so this distance and
+                        // ACT2_END need to stay in proportion. This was still
+                        // '0.8' from when the acts above were much longer
+                        // (ACT2_END used to be ~0.47-0.88); now that they're
+                        // 0.10 total, that same 0.8 stretched nearly the whole
+                        // scroll into a "dead" runway with barely any visible
+                        // motion per pixel before the header reveal finally
+                        // fired at the very end — that was the "scroll down
+                        // more to reveal them" gap. 0.15 restores roughly the
+                        // same pace (tl-units per viewport-height) the acts
+                        // above are actually tuned for.
+                        end: () => '+=' + Math.round(window.innerHeight * 0.15),
                         // pin an inner element (not the <section> React owns) so the
                         // pin-spacer wrapper never fights React on unmount
                         pin: pinEl,
@@ -300,10 +448,14 @@ export default function Hero() {
                 }
 
                 return () => {
-                    clearTimeout(spinDecayTimer);
+                    boostAmbientSpin.cancel();
+                    boostCaseSpin.cancel();
                     window.removeEventListener('mousemove', handleMouseMove);
                     caseTumble.kill();
                     ambientTumble.kill();
+                    sideImageTumble.kill();
+                    sideImageShadowTumble.kill();
+                    sideImageShadow2Tumble.kill();
                     // don't leave the Header's own elements stuck invisible if
                     // Hero unmounts (e.g. navigating away) before the handoff fired
                     if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 1, scale: 1 });
@@ -328,22 +480,45 @@ export default function Hero() {
                 <div className={styles.floatCase}>
                   <div className={styles.caseWrap} ref={caseWrapRef}>
 
-                    {/* options — left side */}
+                    {/* options — left side. Text is typed in on mount (see
+                        the typewriter effect near the top of the effect
+                        above) — aria-label carries the real, complete text
+                        so screen readers get it immediately rather than the
+                        animated fragments. */}
                     <div className={styles.options} ref={optionsRef}>
                         <a
                             href="https://tmp3o.com/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.topbarLink}
-                        >
-                            tmp3o.com
-                        </a>
+                            aria-label="tmp3o.com"
+                            ref={tmp3oTextRef}
+                        />
 
-                        <Link to="/" className={styles.titleLink}>
+                        <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
                             <h1 className={styles.title}>
-                                WHAT INSPIRES <span>U?</span>
+                                <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
                             </h1>
                         </Link>
+                    </div>
+
+                    {/* side image — right side, mirroring .options on the left
+                        (also balances the composition, since options alone
+                        had nothing on the right side to weigh against it).
+                        Swap the src below for your own image — .sideImage's
+                        brightness is a CSS variable (--side-image-brightness,
+                        default 1) you can override per-use via an inline
+                        style, e.g. style={{ '--side-image-brightness': 1.3 }}
+                        on this wrapper div, or just edit the default in
+                        Hero.module.css. Decorative, so both are aria-hidden. */}
+                    <div className={`${styles.sideImageGroup} ${styles.sideImageShadow}`} ref={sideImageShadowRef} aria-hidden="true">
+                        <img src="/skully.png" className={`${styles.sideImage} ${styles.sideImageShadowImg}`} alt="" />
+                    </div>
+                    <div className={`${styles.sideImageGroup} ${styles.sideImageShadow}`} ref={sideImageShadow2Ref} aria-hidden="true">
+                        <img src="/skully.png" className={`${styles.sideImage} ${styles.sideImageShadowImg}`} alt="" />
+                    </div>
+                    <div className={styles.sideImageGroup} ref={sideImageGroupRef} aria-hidden="true">
+                        <img src="/skully.png" className={styles.sideImage} alt="" />
                     </div>
 
                     {/* cd case body */}

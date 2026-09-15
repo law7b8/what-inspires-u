@@ -15,9 +15,27 @@
   justify-content: center;
   position: relative;
   padding: 40px;
-  /* opaque so the pinned intro doesn't show the header bleeding through underneath */
-  background: #f7f4ef;
+  /* no overflow: hidden here anymore — it was added to contain the wave
+     glow layers from the PS3 pass, which have since been removed, but it
+     kept clipping real content (the case, the side image) at the pinned
+     screen's edges any time they extended past it. That was "the images
+     cut out at certain points" — the case/side image aren't wrong, this
+     was silently cropping them. */
+  /* own stacking context, kept regardless of the above — harmless on its
+     own (doesn't clip anything), just guarantees any z-index: -1 layer
+     added here in the future paints behind every real child without
+     needing z-index tuning on any of them. */
+  isolation: isolate;
+  /* no background color here now (was a dark radial gradient) — this
+     section is transparent, so whatever sits behind it (Header, page
+     background) will show through during the pinned scroll. That's
+     exactly what the "opaque" background here used to prevent; if that
+     bleed-through turns out to look wrong once you see it, a plain solid
+     color (no gradient) would fix it while still not being "the blue
+     background" that was asked to go. */
 }
+
+
 
 /* ─── case wrapper ───────────────────────────────────────── */
 
@@ -27,6 +45,10 @@
   gap: 0;
   position: relative;
   will-change: transform;
+  /* the caseWrap's height was hardcoded to 500px, which left a big
+     gap below the header's actual (much shorter) content on every page,
+     not just Home — that was the "extra room at the bottom" people were
+     scrolling through. Let it size to its content instead. */
   /* no CSS transition on transform here — GSAP (scroll timeline + the
      mouse-parallax quickTo in Hero.jsx) sets this element's transform
      every animation frame; a CSS transition on the same property would
@@ -38,24 +60,86 @@
 
 .options {
   position: absolute;
-  left: -190px;
-  top: -20%;
+  left: -590px;
+  top: 20%;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   gap: 10px;
   will-change: transform;
+  
+  
+}
+
+/* ─── side image (right column) ──────────────────────────────
+   Mirrors .options on the left. The shadow is a separate element sharing
+   this exact positioning (applied via the same .sideImageGroup class on
+   both, so they land on top of each other) rather than a nested back layer
+   inside the front's own group — it needs to spin independently on its own
+   Y-only rotation, opposite the front layer's, which a transform-inheriting
+   child couldn't do (see sideImageShadowTumble in Hero.jsx). No z-offset
+   between them either — they sit at the same depth, distinguished only by
+   the shadow's darker/blurred look and its opposite spin. */
+.sideImageGroup {
+  position: absolute;
+  /* centered on .caseWrap (its nearest positioned ancestor) — was right:
+     -620px/top: 50% (mirroring .options on the left), but those got
+     dropped at some point, leaving this falling back to its default
+     "static" position rather than anywhere deliberate. Centering means it
+     now overlaps the case rather than sitting beside it — if you want it
+     visible without a full overlap, nudge left/top off 50% or add an x/y
+     offset instead of removing this centering outright. */
+  left: 135%;
+  top: 35%;
+  transform: translate(-50%, -50%) rotateZ(-4deg);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  z-index: -1000;
+}
+
+.sideImage {
+  display: block;
+  width: 1200px;
+  height: auto;
+  /* brightness knob — override per-use with an inline style on the
+     .sideImageGroup wrapper, e.g. style={{ '--side-image-brightness': 1.3 }},
+     or just change this default. Only affects the front layer; the shadow
+     layer always keeps its own fixed darker look regardless, since its job
+     is to read as a shadow/depth cue, not the image itself. */
+  --side-image-brightness: 5;
+  filter: brightness(var(--side-image-brightness));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  opacity: 0.30;
+}
+
+.sideImageShadowImg {
+  /* opacity is what actually keeps this reading as a shadow rather than a
+     visible second copy — with no z-offset and independent opposite
+     rotation, there's nothing else hiding it behind the front layer at
+     most angles, so a fully-opaque duplicate the same size just looks
+     like a second image sitting right there. */
+  opacity: 0.05;
+  filter: blur(0.4px) stretch; 
+}
+
+@media (max-width: 900px) {
+  /* same reasoning as .options going static on mobile — not enough room
+     beside a much narrower case for either side column */
+  .sideImageGroup {
+    display: none;
+  }
 }
 
 .opt {
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: #6b6459;
+  color: #9fb8d4;
   text-transform: lowercase;
   padding: 8px 16px;
-  background: #ffffff;
-  border: 1px solid #d4cfc6;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(159, 184, 212, 0.35);
   cursor: pointer;
   text-decoration: none;
   display: block;
@@ -64,13 +148,13 @@
 }
 
 .opt:hover {
-  background: #1a1714;
-  color: #f7f4ef;
+  background: #eaf2fb;
+  color: #04080d;
 }
 
 .optActive {
-  background: #1a1714;
-  color: #f7f4ef;
+  background: #eaf2fb;
+  color: #04080d;
 }
 
 
@@ -85,29 +169,55 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 40px;
+  font-weight: 100;
+  letter-spacing: -0.09em;
   line-height: 0.95;
-  color: #1a1714;
-  letter-spacing: -0.01em;
+  color: #eaf2fb;
   text-transform: lowercase;
   white-space: nowrap;
   margin: 0;
 }
 
-.title span {
-  font-weight: 300;
-  color: #6b6459;
+/* "u?" no longer gets its own lighter weight/color (was a ".titleAccent"
+   rule here) — the whole title is now typed as one plain span sharing
+   .title's own font, all one consistent look instead of two styles. */
+
+/* blinking caret shown only while .options carries data-typing — see the
+   typewriter effect in Hero.jsx. */
+.typingCursor {
+  display: none;
+  width: 1px;
+  height: 0.9em;
+  background: #eaf2fb;
+  margin-left: 2px;
+  vertical-align: -0.1em;
+  animation: caretBlink 1s step-end infinite;
+}
+
+[data-typing] .typingCursor {
+  display: inline-block;
+}
+
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typingCursor {
+    animation: none;
+  }
 }
 
 /* ─── top bar ─────────────────────────────────────────── */
 
 .topbarLink {
-  color: #1a1714;
+  color: #eaf2fb;
   text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
+  font-size: 40px;
+  font-weight: 100;
+  letter-spacing: -0.09em;
 }
 
 .topbarLink:hover {
@@ -144,7 +254,7 @@
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 20px;
   letter-spacing: 0.2em;
-  color: #716e8a;
+  color: #a9c2e0;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
@@ -160,6 +270,11 @@
   align-items: center;
   justify-content: center;
   z-index: -1000;
+  /* glossy XMB-style floor reflection — mirrors whatever's currently
+     rendered inside (case tumbling and all), fading out with the gradient.
+     -webkit-box-reflect is WebKit/Blink-only (Chrome, Edge, Safari, Opera);
+     Firefox just won't show a reflection here, no breakage either way. */
+  -webkit-box-reflect: below 6px linear-gradient(to bottom, transparent, transparent 55%, rgba(180, 220, 255, 0.14));
 }
 
 /* ─── idle float (rest state, ps3-xmb style hover) ──────────
@@ -182,8 +297,12 @@
   80% { transform: translateY(-5px); }
 }
 
-/* soft contact shadow under the case — shrinks and fades as it lifts,
-   timed to match .floatDisc so it reads as that layer's own shadow */
+/* soft contact glow under the case — was a dark contact shadow, which
+   read fine against the site's old light background but would just
+   vanish against this dark one. A glowing blue reflection (like an XMB
+   icon's glossy floor) does the same "grounding" job here instead —
+   shrinks and fades as it lifts, timed to match .floatDisc so it reads as
+   that layer's own light. */
 .caseShadow {
   position: absolute;
   left: 50%;
@@ -191,7 +310,7 @@
   width: 62%;
   height: 34px;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(20, 16, 10, 0.32) 0%, rgba(20, 16, 10, 0) 72%);
+  background: radial-gradient(ellipse at center, rgba(90, 180, 255, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
   filter: blur(3px);
   pointer-events: none;
   z-index: -1;
@@ -292,7 +411,7 @@
    it keeps showing rather than vanishing at the angles where the front
    layer flips away mid-tumble, reading as the case's own back/edge. */
 .discCaseBack {
-  transform: translateZ(-45px);
+  transform: translateZ(-35px);
   filter: blur(0.3px) brightness(0.5) saturate(0.6);
 }
 
@@ -322,10 +441,11 @@
   will-change: transform;
 }
 
-/* soft shadow cast by the ambient logo — orbits around center in Hero.jsx's
+/* soft glow cast by the ambient logo — orbits around center in Hero.jsx's
    ambientTumble onUpdate, tracking the same rotationX/rotationY driving the
-   logo's spin, so it reads as a shadow from a tumbling 3D object rather than
-   a static blob. Sits behind .ambient via DOM order (painted first). */
+   logo's spin, so it reads as light from a tumbling 3D object rather than
+   a static blob. Sits behind .ambient via DOM order (painted first). Blue
+   glow instead of the old dark shadow, matching the case's .caseShadow. */
 .ambientShadow {
   position: absolute;
   top: 50%;
@@ -333,7 +453,7 @@
   width: 280px;
   height: 100px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(20, 16, 10, 0.35) 0%, rgba(20, 16, 10, 0) 72%);
+  background: radial-gradient(ellipse at center, rgba(90, 180, 255, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
   filter: blur(6px);
   pointer-events: none;
 }
@@ -391,7 +511,7 @@
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 10px;
   letter-spacing: 0.18em;
-  color: #8a7f6e;
+  color: #9fb8d4;
   text-transform: lowercase;
   display: flex;
   flex-direction: column;
@@ -402,7 +522,7 @@
 .scrollArrow {
   width: 1px;
   height: 32px;
-  background: #c8bfaf;
+  background: rgba(159, 184, 212, 0.4);
   position: relative;
   overflow: hidden;
 }
@@ -414,7 +534,7 @@
   left: 0;
   width: 1px;
   height: 100%;
-  background: #8a7f6e;
+  background: #9fb8d4;
   animation: drip 1.5s ease-in infinite;
 }
 
@@ -434,14 +554,12 @@
 
 @media (max-width: 768px) {
   .options {
-    position: static;
-    transform: none !important;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 24px;
+    margin-bottom: 1px;
     left: auto;
-    top: auto;
+    top: 20px;
   }
 
   /* .options goes position:static above (in-flow) but .caseWrap is still
