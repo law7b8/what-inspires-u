@@ -26,15 +26,13 @@
      added here in the future paints behind every real child without
      needing z-index tuning on any of them. */
   isolation: isolate;
-  /* no background color here now (was a dark radial gradient) — this
-     section is transparent, so whatever sits behind it (Header, page
-     background) will show through during the pinned scroll. That's
-     exactly what the "opaque" background here used to prevent; if that
-     bleed-through turns out to look wrong once you see it, a plain solid
-     color (no gradient) would fix it while still not being "the blue
-     background" that was asked to go. */
+  /* plain solid color, no gradient — opaque so the pinned intro doesn't
+     show the Header/page bleeding through underneath while scrolling.
+     Light, since .title/.topbarLink are plain black now — swap this one
+     value for whatever color you want; it'll still paint behind every
+     real child here regardless, thanks to isolation: isolate above. */
+  background: #f7f4ef;
 }
-
 
 
 /* ─── case wrapper ───────────────────────────────────────── */
@@ -60,8 +58,8 @@
 
 .options {
   position: absolute;
-  left: -590px;
-  top: 20%;
+  left: -20em;
+  top: -10%;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
@@ -169,14 +167,36 @@
 }
 
 .title {
-  font-size: 40px;
-  font-weight: 100;
+  font-size: 70px;
+  font-weight: 500;
   letter-spacing: -0.09em;
   line-height: 0.95;
-  color: #eaf2fb;
+  color: #000000;
   text-transform: lowercase;
   white-space: nowrap;
   margin: 0;
+}
+
+/* ─── side text (right of the disc, lower) ──────────────────
+   Third typed line — same typewriter loop as .options, own position
+   relative to .caseWrap. Edit SIDE_TEXT in Hero.jsx to change the words;
+   adjust right/top here to move it. */
+.sideText {
+  position: absolute;
+  right: -260px;
+  top: 78%;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 20px;
+  color: #000000;
+  text-transform: lowercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .sideText {
+    display: none;
+  }
 }
 
 /* "u?" no longer gets its own lighter weight/color (was a ".titleAccent"
@@ -187,9 +207,9 @@
    typewriter effect in Hero.jsx. */
 .typingCursor {
   display: none;
-  width: 1px;
+  width: 4px;
   height: 0.9em;
-  background: #eaf2fb;
+  background: #000000;
   margin-left: 2px;
   vertical-align: -0.1em;
   animation: caretBlink 1s step-end infinite;
@@ -213,10 +233,10 @@
 /* ─── top bar ─────────────────────────────────────────── */
 
 .topbarLink {
-  color: #eaf2fb;
+  color: #000000;
   text-decoration: none;
-  font-size: 40px;
-  font-weight: 100;
+  font-size: 70px;
+  font-weight :500;
   letter-spacing: -0.09em;
 }
 
@@ -310,7 +330,7 @@
   width: 62%;
   height: 34px;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(90, 180, 255, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
+  background: radial-gradient(ellipse at center, rgba(109, 109, 109, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
   filter: blur(3px);
   pointer-events: none;
   z-index: -1;

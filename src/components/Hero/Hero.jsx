@@ -356,18 +356,16 @@ export default function Hero() {
                         start: 'top top',
                         // ScrollTrigger always maps scroll progress 0→1 onto the
                         // timeline's own duration (ACT2_END, 0.10) no matter what
-                        // physical distance is set here — so this distance and
-                        // ACT2_END need to stay in proportion. This was still
-                        // '0.8' from when the acts above were much longer
-                        // (ACT2_END used to be ~0.47-0.88); now that they're
-                        // 0.10 total, that same 0.8 stretched nearly the whole
-                        // scroll into a "dead" runway with barely any visible
-                        // motion per pixel before the header reveal finally
-                        // fired at the very end — that was the "scroll down
-                        // more to reveal them" gap. 0.15 restores roughly the
-                        // same pace (tl-units per viewport-height) the acts
-                        // above are actually tuned for.
-                        end: () => '+=' + Math.round(window.innerHeight * 0.15),
+                        // physical distance is set here — so bigger number here =
+                        // less visual change per pixel scrolled = slower, more
+                        // gradual feel; smaller = faster/snappier. Was 0.15 (tuned
+                        // to fix a "too much scroll before the header shows" gap),
+                        // but that also meant the whole intro — the case flying
+                        // apart included — completed within a very short, easy-to-
+                        // miss nudge of scrolling. Raised to 0.5 so there's enough
+                        // scroll room to actually see the fly-apart happen, not
+                        // just glimpse it.
+                        end: () => '+=' + Math.round(window.innerHeight * 0.5),
                         // pin an inner element (not the <section> React owns) so the
                         // pin-spacer wrapper never fights React on unmount
                         pin: pinEl,
@@ -408,15 +406,19 @@ export default function Hero() {
                     .to(discRef.current, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
                     .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION}, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
-                    // the ambient logo gets the same real-depth (z) treatment the
-                    // case gets above, mirrored: while the case recedes away from
-                    // the viewer (z going more negative), the logo also drifts back
-                    // slightly here — a companion depth cue, not a fly-off, so it
-                    // stays subtle and the logo never leaves view. Rotation is
-                    // deliberately left alone — ambientTumble already owns
-                    // rotationX/Y/Z on this element continuously (see above); adding
-                    // more rotation here would fight it for the same properties.
-                    .to(ambientGroup, { z: -180, duration: ACT1_DURATION }, 0)
+                    // the ambient logo now gets the SAME fly-out-and-fade treatment
+                    // as the case above (was just a subtle z drift) — shrinks,
+                    // recedes, and fades to nothing right alongside it. Act 2 below
+                    // then has to bring it back from that vanished state (scale 0.4,
+                    // opacity 0, z -380) to parked-watermark (scale 1.2, opacity
+                    // 0.16, z 60) — a full re-emergence, not a small continuation,
+                    // which is exactly the "coming forward out of the depths"
+                    // counterpart the comment on that tween already describes.
+                    // Rotation is still deliberately left alone — ambientTumble
+                    // already owns rotationX/Y/Z on this element continuously (see
+                    // above); adding more rotation here would fight it for the same
+                    // properties.
+                    .to(ambientGroup, { scale: 0.4, opacity: 0, z: -380, duration: ACT1_DURATION }, 0)
                     // act 2 — the ambient logo eases into its parked position. Its
                     // onComplete/onReverseComplete — not the ScrollTrigger's own
                     // onLeave/onEnterBack — are what reveal/hide the header's
