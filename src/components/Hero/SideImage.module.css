@@ -1,0 +1,62 @@
+/* ─── side image (right column) ──────────────────────────────
+   Mirrors .options on the left in Hero.module.css. The shadow layers are
+   separate elements sharing this exact positioning (applied via the same
+   .sideImageGroup class on all three, so they land on top of each other)
+   rather than nested back layers inside the front's own group — they need
+   to spin independently, which a transform-inheriting child couldn't do
+   (see SideImage.jsx). No z-offset between them either — they sit at the
+   same depth, distinguished only by the shadow's darker/blurred look and
+   its own independent spin. */
+.sideImageGroup {
+  position: absolute;
+  /* centered on the nearest positioned ancestor (Hero's .caseWrap) — if you
+     want it visible without a full overlap on the case, nudge left/top off
+     50% or add an x/y offset instead of removing this centering outright. */
+  left: 135%;
+  top: 35%;
+  transform: translate(-50%, -50%) rotateZ(-4deg);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  z-index: -1000;
+  /* applied here on the group rather than on .sideImage below: .sideImage
+     has backface-visibility: hidden on a continuously-rotating element,
+     and filter + backface-visibility: hidden together is a real
+     Chromium/WebKit bug (the element gets stuck invisible after flipping
+     past 90°). A parent's filter blurs its whole subtree anyway, so this
+     is visually identical without the risk. */
+  filter: blur(4px);
+}
+
+.sideImage {
+  display: block;
+  width: 1200px;
+  height: auto;
+  /* brightness knob — override per-use with an inline style on the
+     .sideImageGroup wrapper, e.g. style={{ '--side-image-brightness': 1.3 }},
+     or just change this default. Only affects the front layer; the shadow
+     layer always keeps its own fixed darker look regardless, since its job
+     is to read as a shadow/depth cue, not the image itself. */
+  --side-image-brightness: 5;
+  filter: brightness(var(--side-image-brightness));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  opacity: 0.30;
+}
+
+.sideImageShadowImg {
+  /* opacity is what actually keeps this reading as a shadow rather than a
+     visible second copy — with no z-offset and independent rotation,
+     there's nothing else hiding it behind the front layer at most angles,
+     so a fully-opaque duplicate the same size just looks like a second
+     image sitting right there. */
+  opacity: 0.05;
+  filter: blur(0.4px);
+}
+
+@media (max-width: 900px) {
+  /* same reasoning as Hero's .options going static on mobile — not enough
+     room beside a much narrower case for either side column */
+  .sideImageGroup {
+    display: none;
+  }
+}
