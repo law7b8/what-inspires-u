@@ -194,21 +194,8 @@
     gap: 10px;
 }
 
-.shareBtn {
-    font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-    font-size: 75px;
-    color: #000000;
-    border: none;
-    cursor: pointer;
-    text-transform: lowercase;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.2s ease;
-}
-
-.shareBtn:hover {
-    background: #4a3f2f;
-}
+/* .shareBtn moved to Hero.module.css as .shareFab — the + button is now a
+   persistent floating element rendered in Hero, not part of this header. */
 
 .monoLabel {
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;

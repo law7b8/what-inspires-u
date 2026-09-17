@@ -4,6 +4,55 @@
   position: relative;
 }
 
+/* ─── + share/create button ──────────────────────────────────
+   Moved from Header (was .shareBtn there, part of the pop-in reveal
+   group) — now a persistent floating button, visible the whole time
+   rather than waiting for the intro to finish. position: fixed so it
+   stays put on screen through scrolling, same idea as a standard
+   floating-action-button. Rendered outside .pinInner/the pinned scroll
+   hierarchy in Hero.jsx, so nothing in that hierarchy's own opacity/
+   transform tweens can affect it. */
+.shareFab {
+  position: absolute;
+  top: 80%;
+  right: 110%;
+  transform: (translateX(-50%) translateY(-50%));
+  z-index: 2000;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 48px;
+  line-height: 1;
+  color: #000000;
+  text-decoration: none;
+  text-transform: lowercase;
+  transition: opacity 0.2s ease;
+}
+
+.shareFab:hover {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .shareFab {
+    top: 16px;
+    right: 16px;
+    font-size: 34px;
+  }
+}
+
+/* ─── fixed footer ───────────────────────────────────────────
+   Moved from App.jsx — pinned to the bottom of the viewport so it stays
+   visible through scrolling instead of only appearing once the page
+   scrolls all the way down to it. Opaque background so scrolling content
+   doesn't show through/overlap it illegibly underneath. */
+.fixedFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  background: #f7f4ef;
+}
+
 /* the actual pinned element — an inner div (kept in flow so its pin-spacer
    extends the page), so ScrollTrigger's wrapper never sits between React and
    the <section> it manages */
@@ -14,7 +63,6 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 40px;
   /* no overflow: hidden here anymore — it was added to contain the wave
      glow layers from the PS3 pass, which have since been removed, but it
      kept clipping real content (the case, the side image) at the pinned
@@ -28,9 +76,12 @@
   isolation: isolate;
   /* plain solid color, no gradient — opaque so the pinned intro doesn't
      show the Header/page bleeding through underneath while scrolling.
-     Light, since .title/.topbarLink are plain black now — swap this one
-     value for whatever color you want; it'll still paint behind every
-     real child here regardless, thanks to isolation: isolate above. */
+     Matches the site's own background (body { background-color: #f7f4ef }
+     in global.css) rather than an arbitrary color, so the Hero doesn't
+     visibly clash with the page it hands off to — and it's light, giving
+     good contrast against .title/.topbarLink's plain black text. Swap
+     this one value for whatever color you want; it'll still paint behind
+     every real child here regardless, thanks to isolation: isolate above. */
   background: #f7f4ef;
 }
 
@@ -56,78 +107,38 @@
 
 /* ─── options (left column) ──────────────────────────────── */
 
-.options {
+/* outer wrapper — carries the static anchor position (left/top) and gets
+   its x/y translated every frame in Hero.jsx to orbit the ambient logo's
+   live on-screen position. Kept separate from .options below so that
+   orbit translate never fights the scroll timeline's own x tween on
+   .options — same "different element for different property" pattern used
+   throughout this file (e.g. .ambientParallax vs. .ambientGroup). */
+.optionsOrbit {
   position: absolute;
   left: -20em;
   top: -10%;
-  transform: translateY(-50%);
+  will-change: transform;
+}
+
+.options {
   display: flex;
   flex-direction: column;
   gap: 10px;
   will-change: transform;
-  
-  
-}
-
-/* ─── side image (right column) ──────────────────────────────
-   Mirrors .options on the left. The shadow is a separate element sharing
-   this exact positioning (applied via the same .sideImageGroup class on
-   both, so they land on top of each other) rather than a nested back layer
-   inside the front's own group — it needs to spin independently on its own
-   Y-only rotation, opposite the front layer's, which a transform-inheriting
-   child couldn't do (see sideImageShadowTumble in Hero.jsx). No z-offset
-   between them either — they sit at the same depth, distinguished only by
-   the shadow's darker/blurred look and its opposite spin. */
-.sideImageGroup {
-  position: absolute;
-  /* centered on .caseWrap (its nearest positioned ancestor) — was right:
-     -620px/top: 50% (mirroring .options on the left), but those got
-     dropped at some point, leaving this falling back to its default
-     "static" position rather than anywhere deliberate. Centering means it
-     now overlaps the case rather than sitting beside it — if you want it
-     visible without a full overlap, nudge left/top off 50% or add an x/y
-     offset instead of removing this centering outright. */
-  left: 135%;
-  top: 35%;
-  transform: translate(-50%, -50%) rotateZ(-4deg);
-  transform-style: preserve-3d;
-  pointer-events: none;
-  z-index: -1000;
-}
-
-.sideImage {
-  display: block;
-  width: 1200px;
-  height: auto;
-  /* brightness knob — override per-use with an inline style on the
-     .sideImageGroup wrapper, e.g. style={{ '--side-image-brightness': 1.3 }},
-     or just change this default. Only affects the front layer; the shadow
-     layer always keeps its own fixed darker look regardless, since its job
-     is to read as a shadow/depth cue, not the image itself. */
-  --side-image-brightness: 5;
-  filter: brightness(var(--side-image-brightness));
+  /* spins continuously on X — perpendicular to the ambient logo's own
+     Y-axis rotation (see optionsTumble in Hero.jsx). No filter on this
+     element, so backface-visibility: hidden here is safe from the filter +
+     backface-visibility Chromium/WebKit bug fixed elsewhere in this file —
+     this just makes the text fade out of view for the far half of each
+     rotation instead of showing it mirrored/backwards, since .options has
+     no separate "back" layer the way the case/logo do. */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  opacity: 0.30;
 }
 
-.sideImageShadowImg {
-  /* opacity is what actually keeps this reading as a shadow rather than a
-     visible second copy — with no z-offset and independent opposite
-     rotation, there's nothing else hiding it behind the front layer at
-     most angles, so a fully-opaque duplicate the same size just looks
-     like a second image sitting right there. */
-  opacity: 0.05;
-  filter: blur(0.4px) stretch; 
-}
-
-@media (max-width: 900px) {
-  /* same reasoning as .options going static on mobile — not enough room
-     beside a much narrower case for either side column */
-  .sideImageGroup {
-    display: none;
-  }
-}
+/* side image styles moved to SideImage.module.css — the side image is now
+   its own self-contained component (SideImage.jsx), rendered inside
+   .caseWrap below rather than styled/wired up in here. */
 
 .opt {
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
@@ -220,8 +231,15 @@
 }
 
 @keyframes caretBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -236,7 +254,7 @@
   color: #000000;
   text-decoration: none;
   font-size: 70px;
-  font-weight :500;
+  font-weight: 500;
   letter-spacing: -0.09em;
 }
 
@@ -283,8 +301,11 @@
 /* ─── case body ──────────────────────────────────────────── */
 
 .caseBody {
-  width: auto;
-  height: auto;
+  /* was position: absolute + height: 0 — that pulls it out of .caseWrap's
+     flex centering entirely (absolute elements don't participate in flex
+     layout) and collapses its own box to nothing. Back to a normal flex
+     child, sized to content, so .caseWrap's align-items/justify-content
+     actually centers it again. */
   position: relative;
   display: flex;
   align-items: center;
@@ -313,8 +334,15 @@
 }
 
 @keyframes floatBob {
-  0%, 50% { transform: translateY(0); }
-  80% { transform: translateY(-5px); }
+
+  0%,
+  50% {
+    transform: translateY(0);
+  }
+
+  80% {
+    transform: translateY(-5px);
+  }
 }
 
 /* soft contact glow under the case — was a dark contact shadow, which
@@ -322,7 +350,7 @@
    vanish against this dark one. A glowing blue reflection (like an XMB
    icon's glossy floor) does the same "grounding" job here instead —
    shrinks and fades as it lifts, timed to match .floatDisc so it reads as
-   that layer's own light. */
+   that layer's own light. 
 .caseShadow {
   position: absolute;
   left: 50%;
@@ -337,13 +365,24 @@
   animation: shadowPulse 3.4s ease-in-out infinite;
   animation-delay: -1.4s;
 }
+*/
 
 @keyframes shadowPulse {
-  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.85; }
-  50% { transform: translateX(-50%) scale(0.72); opacity: 0.45; }
+
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: translateX(-50%) scale(0.72);
+    opacity: 0.45;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .floatCase,
   .floatDisc,
   .ambientFloat,
@@ -355,6 +394,9 @@
 /* ─── disc ───────────────────────────────────────────────── */
 
 .discSlot {
+  /* was width/height: 0 + position: absolute — same problem as .caseBody
+     above: pulled out of its parent's flex centering and collapsed to
+     nothing. Back to a normal, content-sized flex child. */
   width: auto;
   height: auto;
   position: relative;
@@ -368,7 +410,7 @@
   will-change: transform;
   flex-shrink: 0;
   width: 500px;
-  height: 600px;
+  height: 500px;
   /* visible, not hidden: the case image tumbles continuously in 3D
      (caseTumble in Hero.jsx), so a clipped box chops off its edges
      mid-rotation instead of just cropping the static overhang */
@@ -379,6 +421,11 @@
   content: '';
   position: absolute;
   inset: 0;
+  /* glossy highlight sweep — a conic gradient blended with overlay reads
+     as a curved, reflective sheen across the case rather than a flat
+     image, which is most of what actually sells the "3D object" look
+     here. This had been stripped down to nothing (no background/blend
+     mode at all). */
   background: conic-gradient(rgba(255, 255, 255, 0.4) 0deg,
       rgba(255, 255, 255, 0) 90deg,
       rgba(255, 255, 255, 0.2) 180deg,
@@ -394,17 +441,16 @@
    real 3D through every rotation instead of faking an edge with a shadow
    painted in one fixed direction (which breaks the illusion once it spins). */
 .discCaseGroup {
+  /* was missing top/left/transform entirely — an absolutely positioned
+     element with no offsets anchors at its "static position" (roughly
+     top-left of its containing block), not centered. Restored to the
+     same centered pattern .ambientGroup uses (top/left: 50% + a
+     translate(-50%, -50%) counter-offset). */
   position: absolute;
-  top: 49%;
-  left: 46%;
-  /* was translate(-54%, -50%) — the extra 4% (~20px on the 500px case) was
-     an unexplained leftward nudge with nothing else in this file justifying
-     it, unlike .ambientGroup's identical front/back-layer setup below, which
-     centers with a plain, symmetric -50%/-50%. That's what was reading as
-     "the case is shifted left, not centered." */
-  transform: translate(-50%, -50%);
+  justify-content: center;
+  top: 0;
   width: 100%;
-  height: 500px;
+  height: 200px;
   z-index: 500;
   transform-style: preserve-3d;
 }
@@ -412,8 +458,8 @@
 .discCase {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 450px;
+  height: auto;
   /* no filter here (was blur(0.3px)) — combining `filter` with
      `backface-visibility: hidden` on a continuously 3D-rotated element
      hits a real Chromium/WebKit compositing bug where the element gets
@@ -444,6 +490,11 @@
 .ambientFloat {
   position: fixed;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: -3%;
+  right: 1%;
   z-index: 0;
   pointer-events: none;
   animation: floatBob 20.4s ease-in-out infinite;
@@ -486,7 +537,7 @@
 .ambientGroup {
   position: absolute;
   top: 52%;
-  left: 50%;
+  left: 51.5%;
   transform: translate(-50%, -50%);
   width: 370px;
   max-width: 62vw;
@@ -500,8 +551,8 @@
 .ambient {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 80%;
   pointer-events: none;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -573,13 +624,21 @@
 /* ─── responsive ─────────────────────────────────────────── */
 
 @media (max-width: 768px) {
+  /* was on .options directly, back when it carried the absolute
+     positioning itself — that now lives on .optionsOrbit (see above), so
+     the reset moves here: static/no-transform means it just flows in
+     normal document order above the case instead of orbiting off to the
+     side, matching the comment below about .caseWrap. */
+  .optionsOrbit {
+    position: static;
+    transform: none;
+  }
+
   .options {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
     margin-bottom: 1px;
-    left: auto;
-    top: 20px;
   }
 
   /* .options goes position:static above (in-flow) but .caseWrap is still

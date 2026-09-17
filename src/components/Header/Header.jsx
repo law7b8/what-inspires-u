@@ -4,10 +4,10 @@ import styles from './Header.module.css';
 export default function Header() {
     return (
         <header className={styles.wrapper}>
-            <Link to="/new" className={styles.shareBtn} id="header-share">
-                +
-            </Link>
-
+            {/* the "+" share/create button moved to Hero — it's now a
+                persistent, always-visible floating button there instead of
+                a header element that only appeared after the intro's
+                pop-in reveal. */}
             <div className={styles.topbar}>
 
                 <div className={styles.topbarRight}>

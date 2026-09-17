@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
+import SideImage from './SideImage';
+import Footer from '../Footer/Footer';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -12,12 +14,10 @@ export default function Hero() {
     const caseWrapRef = useRef(null);
     const caseImgGroupRef = useRef(null); // cd1.png front+back layers — the jewel case, flies away
     const discRef = useRef(null);      // case body wrapper (spine + case)
+    const optionsOrbitRef = useRef(null); // outer wrapper — orbits the ambient logo's live position; optionsRef (inner) keeps its own self-spin + the scroll fade
     const optionsRef = useRef(null);
     const tmp3oTextRef = useRef(null); // typed in on mount — see the typewriter effect below
     const titleTextRef = useRef(null); // "what inspires u?" — same typewriter loop, one plain span (no separate accent styling)
-    const sideImageGroupRef = useRef(null);  // your inserted image — spins like the case/logo
-    const sideImageShadowRef = useRef(null);  // separate element, spins on Y only, no z-offset
-    const sideImageShadow2Ref = useRef(null); // a second one, same idea, own independent phase
     const hintRef = useRef(null);
     const ambientGroupRef = useRef(null);  // tempoLogo.png front+back layers — the disc that keeps spinning
     const ambientShadowRef = useRef(null); // soft shadow that orbits in sync with it
@@ -79,7 +79,7 @@ export default function Hero() {
             // the longer title text still reads at the same typing *speed*
             // as the shorter tmp3o.com line instead of visibly rushing to
             // fit the same duration.
-            const CHAR_TYPE_DURATION = 0.145;   // seconds per character while typing
+            const CHAR_TYPE_DURATION = 0.18;   // seconds per character while typing
             const CHAR_UNTYPE_DURATION = 0.245; // untyping reads better a little quicker
             const HOLD_DURATION = 1.6;          // pause once a line is fully typed
             const LINE_GAP = 0.35;              // pause on the empty state before the next line starts
@@ -138,9 +138,6 @@ export default function Hero() {
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(caseWrapRef.current, { transformPerspective: 900 });
                 gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
-                gsap.set(sideImageGroupRef.current, { transformPerspective: 900 });
-                gsap.set(sideImageShadowRef.current, { transformPerspective: 900 });
-                gsap.set(sideImageShadow2Ref.current, { transformPerspective: 900 });
                 gsap.set(ambientGroup, {
                     opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
                 });
@@ -163,37 +160,53 @@ export default function Hero() {
                 ambientTumble
                     .to(ambientGroup, { rotationX: '-=360', rotationY: '-=360', rotationZ: '+=360', duration: 70 }, 0);
 
-                // the side image's own forever tumble — same idea again: spins
-                // continuously from mount, nothing else ever touches its
-                // rotation, so there's nothing for it to fight with.
-                const sideImageTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-                sideImageTumble
-                    .to(sideImageGroupRef.current, { rotationY: '+=360', duration: 900 }, 0)
-                    .to(sideImageGroupRef.current, { rotationZ: '-=360', duration: 900 }, 0)
-                    .to(sideImageGroupRef.current, { rotationX: '-=360', duration: 200 }, 0);
+                // the options text block's own self-spin — X axis, i.e.
+                // perpendicular to the logo's own Y-axis rotation (a door
+                // swinging left-right vs. a flap swinging top-bottom).
+                // Perspective for this comes from caseWrapRef (already set
+                // above), since .options is a direct child of it. The
+                // scroll timeline further below only ever touches
+                // optionsRef's x/opacity (fading it out during the
+                // fly-apart), never rotation, so the two don't fight over
+                // the same property either. .options has no "back" layer
+                // the way the case/logo do, so .options itself gets
+                // backface-visibility: hidden in the CSS — it just fades
+                // out of view for the far half of each rotation instead of
+                // showing the text mirrored/backwards.
+                const optionsTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
+                optionsTumble
+                    .to(optionsRef.current, { rotationX: '+=360', duration: 24 }, 0);
 
-                // the shadow layer is a separate element now, not a child of
-                // sideImageGroupRef (same reasoning as ambientShadow being a
-                // sibling of ambientGroup, not nested inside it) — spinning it
-                // the opposite way on Y only, at the same speed, needs its own
-                // independent rotation rather than inheriting the front
-                // layer's, which a nested child can't do (it would just
-                // compose on top of whatever the parent is doing, not counter
-                // it).
-                const sideImageShadowTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-                sideImageShadowTumble
-                    .to(sideImageShadowRef.current, { rotationY: '-=360', duration: 40 }, 0);
-                sideImageShadowTumble.progress(0.25); // starts already halfway through its cycle, out of phase with the front layer instead of both beginning aligned at mount
-
-                // a second shadow layer, same idea again — its own independent
-                // tumble at a different phase again (0.6, vs. the first
-                // shadow's 0.25) so the two shadows don't just sit stacked on
-                // top of each other; between the front layer and both
-                // shadows, all three are now out of phase with one another.
-                const sideImageShadow2Tumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-                sideImageShadow2Tumble
-                    .to(sideImageShadow2Ref.current, { rotationY: '-=360', duration: 20 }, 0);
-                sideImageShadow2Tumble.progress(0.6);
+                // ── orbit — optionsOrbitRef (the outer wrapper, separate
+                // from optionsRef so this never fights the scroll timeline's
+                // x tween above) circles the ambient logo's actual live
+                // on-screen position every frame — not a fixed point, since
+                // the logo itself keeps moving (scroll-driven parking, mouse
+                // parallax). orbitAnchor is optionsOrbitRef's own natural
+                // resting position, captured once before any GSAP offset is
+                // applied, so the orbit target below can be expressed as a
+                // delta from it (an x/y translate), rather than fighting
+                // over the element's actual page position directly.
+                const ORBIT_RADIUS = 220;
+                const orbitAnchorRect = optionsOrbitRef.current.getBoundingClientRect();
+                const orbitAnchorCenterX = orbitAnchorRect.left + orbitAnchorRect.width / 2;
+                const orbitAnchorCenterY = orbitAnchorRect.top + orbitAnchorRect.height / 2;
+                const orbitProxy = { angle: 0 };
+                const optionsOrbit = gsap.to(orbitProxy, {
+                    angle: Math.PI * 2,
+                    duration: 18,
+                    repeat: -1,
+                    ease: 'none',
+                    onUpdate: () => {
+                        const logoRect = ambientGroup.getBoundingClientRect();
+                        const logoCenterX = logoRect.left + logoRect.width / 2;
+                        const logoCenterY = logoRect.top + logoRect.height / 2;
+                        gsap.set(optionsOrbitRef.current, {
+                            x: logoCenterX + Math.cos(orbitProxy.angle) * ORBIT_RADIUS - orbitAnchorCenterX,
+                            y: logoCenterY + Math.sin(orbitProxy.angle) * ORBIT_RADIUS * 0.45 - orbitAnchorCenterY,
+                        });
+                    },
+                });
 
                 // ── spin boosters — both perpetual tumbles (caseTumble,
                 // ambientTumble) can be sped up temporarily by whatever's
@@ -318,7 +331,11 @@ export default function Hero() {
                 // it's already position:fixed and keeps tumbling via ambientTumble
                 // the whole time, so it doesn't need a separate reveal at all.
                 // header-logo stays hidden at its default opacity: 0 (Header.jsx).
-                const headerPopEls = ['header-title', 'header-tmp3o', 'header-share']
+                // "header-share" (the + button) used to be part of this group too,
+                // but it's now its own persistent, always-visible fixed button
+                // rendered in Hero itself (see .shareFab below) rather than
+                // something that waits for the pop-in reveal.
+                const headerPopEls = ['header-title', 'header-tmp3o']
                     .map((id) => document.getElementById(id))
                     .filter(Boolean);
 
@@ -404,7 +421,7 @@ export default function Hero() {
                     // scale/z toned down (was 1.35/240 — ballooned into an
                     // unrecognizable close-up under perspective).
                     .to(discRef.current, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
-                    .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION}, 0)
+                    .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
                     // the ambient logo now gets the SAME fly-out-and-fade treatment
                     // as the case above (was just a subtle z drift) — shrinks,
@@ -455,9 +472,8 @@ export default function Hero() {
                     window.removeEventListener('mousemove', handleMouseMove);
                     caseTumble.kill();
                     ambientTumble.kill();
-                    sideImageTumble.kill();
-                    sideImageShadowTumble.kill();
-                    sideImageShadow2Tumble.kill();
+                    optionsTumble.kill();
+                    optionsOrbit.kill();
                     // don't leave the Header's own elements stuck invisible if
                     // Hero unmounts (e.g. navigating away) before the handoff fired
                     if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 1, scale: 1 });
@@ -476,90 +492,105 @@ export default function Hero() {
 
     return (
         <>
+            {/* + share/create button — moved here from Header, now a
+                persistent, always-visible floating button (position: fixed
+                in Hero.module.css) rather than something that only appears
+                after the intro's pop-in reveal. Sits outside .pinInner/the
+                pinned scroll hierarchy entirely, so no ancestor transform
+                or opacity tween can affect it. */}
+
+            {/* Footer — moved here from App.jsx, wrapped so it can be
+                pinned to the bottom of the screen (position: fixed, see
+                .fixedFooter in Hero.module.css) and stay visible through
+                scrolling instead of only appearing once you reach the very
+                bottom of the page. Sits outside .pinInner/the pinned
+                scroll hierarchy, same reasoning as the + button above. */}
+            <div className={styles.fixedFooter}>
+                <Footer />
+            </div>
+
             <section className={styles.hero} id="hero" ref={heroRef}>
-              <div className={styles.pinInner} ref={pinRef}>
+                <div className={styles.pinInner} ref={pinRef}>
 
-                <div className={styles.floatCase}>
-                  <div className={styles.caseWrap} ref={caseWrapRef}>
+                    <div className={styles.floatCase}>
+                        <Link to="/new" className={styles.shareFab} aria-label="create a post">
+                            +
+                        </Link>
 
-                    {/* options — left side. Text is typed in on mount (see
+                        <div className={styles.caseWrap} ref={caseWrapRef}>
+
+                            {/* options — left side. Text is typed in on mount (see
                         the typewriter effect near the top of the effect
                         above) — aria-label carries the real, complete text
                         so screen readers get it immediately rather than the
-                        animated fragments. */}
-                    <div className={styles.options} ref={optionsRef}>
-                        <a
-                            href="https://tmp3o.com/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.topbarLink}
-                            aria-label="tmp3o.com"
-                            ref={tmp3oTextRef}
-                        />
+                        animated fragments. Split into two levels:
+                        optionsOrbitRef (outer) orbits the ambient logo's live
+                        position, optionsRef (inner) handles its own self-spin
+                        plus the scroll-driven fade/slide — kept separate so
+                        the orbit's x/y translate never fights the scroll
+                        timeline's own x tween on optionsRef. */}
+                            <div className={styles.optionsOrbit} ref={optionsOrbitRef}>
+                                <div className={styles.options} ref={optionsRef}>
+                                    <a
+                                        href="https://tmp3o.com/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.topbarLink}
+                                        aria-label="tmp3o.com"
+                                        ref={tmp3oTextRef}
+                                    />
 
-                        <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
-                            <h1 className={styles.title}>
-                                <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
-                            </h1>
-                        </Link>
-                    </div>
+                                    <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
+                                        <h1 className={styles.title}>
+                                            <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
+                                        </h1>
+                                    </Link>
+                                </div>
+                            </div>
 
-                    {/* side image — right side, mirroring .options on the left
-                        (also balances the composition, since options alone
-                        had nothing on the right side to weigh against it).
-                        Swap the src below for your own image — .sideImage's
-                        brightness is a CSS variable (--side-image-brightness,
-                        default 1) you can override per-use via an inline
-                        style, e.g. style={{ '--side-image-brightness': 1.3 }}
-                        on this wrapper div, or just edit the default in
-                        Hero.module.css. Decorative, so both are aria-hidden. */}
-                    <div className={`${styles.sideImageGroup} ${styles.sideImageShadow}`} ref={sideImageShadowRef} aria-hidden="true">
-                        <img src="/skully.png" className={`${styles.sideImage} ${styles.sideImageShadowImg}`} alt="" />
-                    </div>
-                    <div className={`${styles.sideImageGroup} ${styles.sideImageShadow}`} ref={sideImageShadow2Ref} aria-hidden="true">
-                        <img src="/skully.png" className={`${styles.sideImage} ${styles.sideImageShadowImg}`} alt="" />
-                    </div>
-                    <div className={styles.sideImageGroup} ref={sideImageGroupRef} aria-hidden="true">
-                        <img src="/skully.png" className={styles.sideImage} alt="" />
-                    </div>
+                            {/* side image — its own self-contained component now
+                        (SideImage.jsx), right side, mirroring .options on
+                        the left (also balances the composition, since
+                        options alone had nothing on the right side to weigh
+                        against it). */}
 
-                    {/* cd case body */}
-                    <div className={styles.caseBody}>
-                        <div className={styles.floatDisc}>
-                          <div className={styles.discSlot}>
-                              <div className={styles.disc} ref={discRef}>
-                                  {/* cd spine */}
-                                  <div className={styles.spine}>
-                                      <span className={styles.spineText}></span>
-                                  </div>
-                                  {/* front + back layers give the case real Z-depth
+                            {/* cd case body */}
+                            <div className={styles.caseBody}>
+                                <div className={styles.floatDisc}>
+                                    <div className={styles.discSlot}>
+                                        <div className={styles.disc} ref={discRef}>
+                                            {/* cd spine */}
+                                            <div className={styles.spine}>
+                                                <span className={styles.spineText}></span>
+                                            </div>
+                                            {/* front + back layers give the case real Z-depth
                                       instead of a flat drop-shadow, so it holds up
                                       as it tumbles in 3D — see .discCaseGroup */}
-                                  <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
-                                      <img
-                                          src="/cd1.png"
-                                          className={styles.discCase}
-                                          alt=""
-                                          aria-hidden="true"
-                                      />
-                                      <img
-                                          src="/cd1.png"
-                                          className={`${styles.discCase} ${styles.discCaseBack}`}
-                                          alt=""
-                                          aria-hidden="true"
-                                      />
-                                  </div>
-                              </div>
-                          </div>
+                                            <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
+                                                <img
+                                                    src="/cd1.png"
+                                                    className={styles.discCase}
+                                                    alt=""
+                                                    aria-hidden="true"
+                                                />
+                                                <img
+                                                    src="/cd1.png"
+                                                    className={`${styles.discCase} ${styles.discCaseBack}`}
+                                                    alt=""
+                                                    aria-hidden="true"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* soft ps3-style contact shadow, pulses with .floatDisc */}
+                                <div className={styles.caseShadow} />
+                            </div>
+
                         </div>
-                        {/* soft ps3-style contact shadow, pulses with .floatDisc */}
-                        <div className={styles.caseShadow} />
                     </div>
 
-                  </div>
                 </div>
-
-              </div>
             </section>
 
             {/* the disc: sits in the case during the intro, then keeps spinning
