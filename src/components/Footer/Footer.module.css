@@ -1,7 +1,12 @@
 
 
 .footer {
-    margin-top: auto;
+    /* was margin-top: auto — that was for the old "push to the bottom of a
+       flex column" sticky-footer pattern back when this rendered normally
+       in App.jsx's document flow. Now it's wrapped in Hero's own
+       .fixedFooter (position: fixed), which handles the positioning
+       itself, so this would just be dead weight (and wrong, since Footer
+       is no longer a flex item in that column). */
     padding-top: 1rem;
 }
 

@@ -4,6 +4,55 @@
   position: relative;
 }
 
+/* ─── + share/create button ──────────────────────────────────
+   Moved from Header (was .shareBtn there, part of the pop-in reveal
+   group) — now a persistent floating button, visible the whole time
+   rather than waiting for the intro to finish. position: fixed so it
+   stays put on screen through scrolling, same idea as a standard
+   floating-action-button. Rendered outside .pinInner/the pinned scroll
+   hierarchy in Hero.jsx, so nothing in that hierarchy's own opacity/
+   transform tweens can affect it. */
+.shareFab {
+  position: absolute;
+  top: 80%;
+  right: 110%;
+  transform: (translateX(-50%) translateY(-50%));
+  z-index: 2000;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 48px;
+  line-height: 1;
+  color: #000000;
+  text-decoration: none;
+  text-transform: lowercase;
+  transition: opacity 0.2s ease;
+}
+
+.shareFab:hover {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .shareFab {
+    top: 16px;
+    right: 16px;
+    font-size: 34px;
+  }
+}
+
+/* ─── fixed footer ───────────────────────────────────────────
+   Moved from App.jsx — pinned to the bottom of the viewport so it stays
+   visible through scrolling instead of only appearing once the page
+   scrolls all the way down to it. Opaque background so scrolling content
+   doesn't show through/overlap it illegibly underneath. */
+.fixedFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  background: #f7f4ef;
+}
+
 /* the actual pinned element — an inner div (kept in flow so its pin-spacer
    extends the page), so ScrollTrigger's wrapper never sits between React and
    the <section> it manages */

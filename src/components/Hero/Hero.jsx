@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
 import SideImage from './SideImage';
+import Footer from '../Footer/Footer';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -78,7 +79,7 @@ export default function Hero() {
             // the longer title text still reads at the same typing *speed*
             // as the shorter tmp3o.com line instead of visibly rushing to
             // fit the same duration.
-            const CHAR_TYPE_DURATION = 0.145;   // seconds per character while typing
+            const CHAR_TYPE_DURATION = 0.18;   // seconds per character while typing
             const CHAR_UNTYPE_DURATION = 0.245; // untyping reads better a little quicker
             const HOLD_DURATION = 1.6;          // pause once a line is fully typed
             const LINE_GAP = 0.35;              // pause on the empty state before the next line starts
@@ -330,7 +331,11 @@ export default function Hero() {
                 // it's already position:fixed and keeps tumbling via ambientTumble
                 // the whole time, so it doesn't need a separate reveal at all.
                 // header-logo stays hidden at its default opacity: 0 (Header.jsx).
-                const headerPopEls = ['header-title', 'header-tmp3o', 'header-share']
+                // "header-share" (the + button) used to be part of this group too,
+                // but it's now its own persistent, always-visible fixed button
+                // rendered in Hero itself (see .shareFab below) rather than
+                // something that waits for the pop-in reveal.
+                const headerPopEls = ['header-title', 'header-tmp3o']
                     .map((id) => document.getElementById(id))
                     .filter(Boolean);
 
@@ -416,7 +421,7 @@ export default function Hero() {
                     // scale/z toned down (was 1.35/240 — ballooned into an
                     // unrecognizable close-up under perspective).
                     .to(discRef.current, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
-                    .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION}, 0)
+                    .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
                     // the ambient logo now gets the SAME fly-out-and-fade treatment
                     // as the case above (was just a subtle z drift) — shrinks,
@@ -487,13 +492,34 @@ export default function Hero() {
 
     return (
         <>
+            {/* + share/create button — moved here from Header, now a
+                persistent, always-visible floating button (position: fixed
+                in Hero.module.css) rather than something that only appears
+                after the intro's pop-in reveal. Sits outside .pinInner/the
+                pinned scroll hierarchy entirely, so no ancestor transform
+                or opacity tween can affect it. */}
+
+            {/* Footer — moved here from App.jsx, wrapped so it can be
+                pinned to the bottom of the screen (position: fixed, see
+                .fixedFooter in Hero.module.css) and stay visible through
+                scrolling instead of only appearing once you reach the very
+                bottom of the page. Sits outside .pinInner/the pinned
+                scroll hierarchy, same reasoning as the + button above. */}
+            <div className={styles.fixedFooter}>
+                <Footer />
+            </div>
+
             <section className={styles.hero} id="hero" ref={heroRef}>
-              <div className={styles.pinInner} ref={pinRef}>
+                <div className={styles.pinInner} ref={pinRef}>
 
-                <div className={styles.floatCase}>
-                  <div className={styles.caseWrap} ref={caseWrapRef}>
+                    <div className={styles.floatCase}>
+                        <Link to="/new" className={styles.shareFab} aria-label="create a post">
+                            +
+                        </Link>
 
-                    {/* options — left side. Text is typed in on mount (see
+                        <div className={styles.caseWrap} ref={caseWrapRef}>
+
+                            {/* options — left side. Text is typed in on mount (see
                         the typewriter effect near the top of the effect
                         above) — aria-label carries the real, complete text
                         so screen readers get it immediately rather than the
@@ -503,68 +529,68 @@ export default function Hero() {
                         plus the scroll-driven fade/slide — kept separate so
                         the orbit's x/y translate never fights the scroll
                         timeline's own x tween on optionsRef. */}
-                    <div className={styles.optionsOrbit} ref={optionsOrbitRef}>
-                        <div className={styles.options} ref={optionsRef}>
-                            <a
-                                href="https://tmp3o.com/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.topbarLink}
-                                aria-label="tmp3o.com"
-                                ref={tmp3oTextRef}
-                            />
+                            <div className={styles.optionsOrbit} ref={optionsOrbitRef}>
+                                <div className={styles.options} ref={optionsRef}>
+                                    <a
+                                        href="https://tmp3o.com/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.topbarLink}
+                                        aria-label="tmp3o.com"
+                                        ref={tmp3oTextRef}
+                                    />
 
-                            <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
-                                <h1 className={styles.title}>
-                                    <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
-                                </h1>
-                            </Link>
-                        </div>
-                    </div>
+                                    <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
+                                        <h1 className={styles.title}>
+                                            <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
+                                        </h1>
+                                    </Link>
+                                </div>
+                            </div>
 
-                    {/* side image — its own self-contained component now
+                            {/* side image — its own self-contained component now
                         (SideImage.jsx), right side, mirroring .options on
                         the left (also balances the composition, since
                         options alone had nothing on the right side to weigh
                         against it). */}
 
-                    {/* cd case body */}
-                    <div className={styles.caseBody}>
-                        <div className={styles.floatDisc}>
-                          <div className={styles.discSlot}>
-                              <div className={styles.disc} ref={discRef}>
-                                  {/* cd spine */}
-                                  <div className={styles.spine}>
-                                      <span className={styles.spineText}></span>
-                                  </div>
-                                  {/* front + back layers give the case real Z-depth
+                            {/* cd case body */}
+                            <div className={styles.caseBody}>
+                                <div className={styles.floatDisc}>
+                                    <div className={styles.discSlot}>
+                                        <div className={styles.disc} ref={discRef}>
+                                            {/* cd spine */}
+                                            <div className={styles.spine}>
+                                                <span className={styles.spineText}></span>
+                                            </div>
+                                            {/* front + back layers give the case real Z-depth
                                       instead of a flat drop-shadow, so it holds up
                                       as it tumbles in 3D — see .discCaseGroup */}
-                                  <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
-                                      <img
-                                          src="/cd1.png"
-                                          className={styles.discCase}
-                                          alt=""
-                                          aria-hidden="true"
-                                      />
-                                      <img
-                                          src="/cd1.png"
-                                          className={`${styles.discCase} ${styles.discCaseBack}`}
-                                          alt=""
-                                          aria-hidden="true"
-                                      />
-                                  </div>
-                              </div>
-                          </div>
+                                            <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
+                                                <img
+                                                    src="/cd1.png"
+                                                    className={styles.discCase}
+                                                    alt=""
+                                                    aria-hidden="true"
+                                                />
+                                                <img
+                                                    src="/cd1.png"
+                                                    className={`${styles.discCase} ${styles.discCaseBack}`}
+                                                    alt=""
+                                                    aria-hidden="true"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* soft ps3-style contact shadow, pulses with .floatDisc */}
+                                <div className={styles.caseShadow} />
+                            </div>
+
                         </div>
-                        {/* soft ps3-style contact shadow, pulses with .floatDisc */}
-                        <div className={styles.caseShadow} />
                     </div>
 
-                  </div>
                 </div>
-
-              </div>
             </section>
 
             {/* the disc: sits in the case during the intro, then keeps spinning
