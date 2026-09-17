@@ -14,7 +14,6 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 40px;
   /* no overflow: hidden here anymore — it was added to contain the wave
      glow layers from the PS3 pass, which have since been removed, but it
      kept clipping real content (the case, the side image) at the pinned
@@ -28,9 +27,12 @@
   isolation: isolate;
   /* plain solid color, no gradient — opaque so the pinned intro doesn't
      show the Header/page bleeding through underneath while scrolling.
-     Light, since .title/.topbarLink are plain black now — swap this one
-     value for whatever color you want; it'll still paint behind every
-     real child here regardless, thanks to isolation: isolate above. */
+     Matches the site's own background (body { background-color: #f7f4ef }
+     in global.css) rather than an arbitrary color, so the Hero doesn't
+     visibly clash with the page it hands off to — and it's light, giving
+     good contrast against .title/.topbarLink's plain black text. Swap
+     this one value for whatever color you want; it'll still paint behind
+     every real child here regardless, thanks to isolation: isolate above. */
   background: #f7f4ef;
 }
 
@@ -66,7 +68,6 @@
   position: absolute;
   left: -20em;
   top: -10%;
-  transform: translateY(-50%);
   will-change: transform;
 }
 
@@ -251,9 +252,12 @@
 /* ─── case body ──────────────────────────────────────────── */
 
 .caseBody {
-  width: 500px;
-  height: 0;
-  position: absolute;
+  /* was position: absolute + height: 0 — that pulls it out of .caseWrap's
+     flex centering entirely (absolute elements don't participate in flex
+     layout) and collapses its own box to nothing. Back to a normal flex
+     child, sized to content, so .caseWrap's align-items/justify-content
+     actually centers it again. */
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -341,9 +345,12 @@
 /* ─── disc ───────────────────────────────────────────────── */
 
 .discSlot {
-  width: 0;
-  height: 0;
-  position: absolute;
+  /* was width/height: 0 + position: absolute — same problem as .caseBody
+     above: pulled out of its parent's flex centering and collapsed to
+     nothing. Back to a normal, content-sized flex child. */
+  width: auto;
+  height: auto;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -354,7 +361,7 @@
   will-change: transform;
   flex-shrink: 0;
   width: 500px;
-  height: 1381px;
+  height: 500px;
   /* visible, not hidden: the case image tumbles continuously in 3D
      (caseTumble in Hero.jsx), so a clipped box chops off its edges
      mid-rotation instead of just cropping the static overhang */
@@ -365,6 +372,11 @@
   content: '';
   position: absolute;
   inset: 0;
+  /* glossy highlight sweep — a conic gradient blended with overlay reads
+     as a curved, reflective sheen across the case rather than a flat
+     image, which is most of what actually sells the "3D object" look
+     here. This had been stripped down to nothing (no background/blend
+     mode at all). */
   background: conic-gradient(rgba(255, 255, 255, 0.4) 0deg,
       rgba(255, 255, 255, 0) 90deg,
       rgba(255, 255, 255, 0.2) 180deg,
@@ -380,9 +392,16 @@
    real 3D through every rotation instead of faking an edge with a shadow
    painted in one fixed direction (which breaks the illusion once it spins). */
 .discCaseGroup {
+  /* was missing top/left/transform entirely — an absolutely positioned
+     element with no offsets anchors at its "static position" (roughly
+     top-left of its containing block), not centered. Restored to the
+     same centered pattern .ambientGroup uses (top/left: 50% + a
+     translate(-50%, -50%) counter-offset). */
   position: absolute;
-  width: auto;
-  height: auto;
+  justify-content: center;
+  top: 0;
+  width: 100%;
+  height: 200px;
   z-index: 500;
   transform-style: preserve-3d;
 }
@@ -422,6 +441,11 @@
 .ambientFloat {
   position: fixed;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: -3%;
+  right: 1%;
   z-index: 0;
   pointer-events: none;
   animation: floatBob 20.4s ease-in-out infinite;
@@ -464,7 +488,7 @@
 .ambientGroup {
   position: absolute;
   top: 52%;
-  left: 50%;
+  left: 51.5%;
   transform: translate(-50%, -50%);
   width: 370px;
   max-width: 62vw;
@@ -478,8 +502,8 @@
 .ambient {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 80%;
   pointer-events: none;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
