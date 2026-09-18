@@ -1,25 +1,156 @@
-/* Design tokens — the shared palette/type scale used across the app.
-   Components still hard-code most of these today; migrate them to var(--…)
-   over time so the look stays consistent from one place. */
+/* ════════════════════════════════════════════════════════════════════
+   COLORS — every color on the site lives in this file.
+
+   Two themes:
+     :root                  → "paper" (the default: your seafoam theme)
+     [data-theme='dusk']    → "dusk"  (the secondary: violet night)
+   Switch with the chips bottom-right, or press 1 (paper) / 2 (dusk).
+
+   To recolor, edit the values in the block for that theme. Each block has
+   the same sections in the same order:
+     A. Page          background, and the panels/cards on top of it
+     B. Text          main, softer and faint text; lines
+     C. Accent        focus rings, buttons, tags, links
+     D. Controls      inputs, selects, buttons
+     E. Options menu  the + box, the option pills, the sheets
+     F. Background    the animated PS3 waves (canvas) — colors are read live,
+                      so saving this file updates the page without a reload
+     G. Hero art      how the CD case and logo are blended (advanced)
+
+   Formats:  #rrggbb / rgba(...)  — normal colors
+             "R, G, B"            — a bare triplet, e.g. 185, 165, 255. Used
+                                    where the site needs the color at several
+                                    opacities (the glow, the wave dust).
+   Wave colors (F) must be #rrggbb.
+
+   Strength/speed of the background (not colors) is in App.jsx → BACKGROUND.
+   Sizes, radii and spacing of the options menu are in
+   components/Hero/PlusMenu.module.css.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ─── paper (default) — retro / cool: 50s seafoam diner ────────────
+   Pale seafoam stock, deep slate-navy ink, cobalt + teal + aqua.
+   Same variable names as before, so it's a drop-in replacement.
+   ──────────────────────────────────────────────────────────────── */
+/* :root, so it applies before any script runs — no flash on load */
 :root {
-  /* surfaces */
-  --wiy-bg: #f7f4ef;
-  --wiy-surface: #ffffff;
-  --wiy-surface-alt: #f5f5f5;
+  color-scheme: light;
 
-  /* ink */
-  --wiy-ink: #1a1714;
-  --wiy-ink-soft: #6b6459;
-  --wiy-ink-faint: #8a7f6e;
+  /* ── A. Page ── */
+  --wiy-bg: #dfe9e6;            /* pale seafoam */
+  --wiy-surface: #f1f6f4;       /* lighter tile-white for cards/panels */
+  --wiy-surface-alt: #cdc5d6;   /* faded mint-grey */
 
-  /* lines */
-  --wiy-line: #c8bfaf;
-  --wiy-line-strong: #1a1714;
+  /* ── B. Text & lines ── */
+  --wiy-ink: #14212b;           /* deep slate navy */
+  --wiy-ink-soft: #46596a;
+  --wiy-ink-faint: #566a79;
+  --wiy-line: #a9c0c0;
+  --wiy-line-strong: #14212b;
 
-  /* accent */
-  --wiy-accent: #0037ff;
+  /* ── C. Accent ── */
+  --wiy-accent: #2457d6;        /* cobalt */
+  --wiy-accent-solid: #1e4fb8;  /* filled buttons (white text) */
+  --wiy-accent-ink: #1a469f;    /* accent used as text on light surfaces */
+
+  /* ── D. Controls ── */
+  --wiy-control-bg: #14212b;
+  --wiy-control-ink: #dfe9e6;
+  --wiy-control-border: #46596a;
+  --wiy-field-bg: #c5d6d3;
+  --wiy-btn: #3a1f86;           /* teal */
+
+  /* ── E. Options menu ── */
+  --wiy-glow: 110, 200, 210;    /* aqua glow */
+  --wiy-glass: rgba(14, 26, 36, 0.55);
+  --wiy-sheet-bg: rgba(12, 24, 34, 0.72);  /* deep enough for light text */
+  --wiy-menu-text: #f1f8f6;
+  --wiy-menu-text-hover: #ffffff;
+
+  /* ── F. Background waves — teal / steel / seafoam bands ── */
+  --wiy-wave-top: #f1f1f1;
+  --wiy-wave-bottom: #2d0f45;
+  --wiy-wave-1: #9e1f92;        /* teal */
+  --wiy-wave-2: #c73fe0;        /* aqua */
+  --wiy-wave-3: #5b2585;        /* steel blue */
+  --wiy-wave-4: #c07de8;        /* seafoam */
+  --wiy-wave-5: #481a68;        /* navy */
+  --wiy-wave-dust: 235, 195, 255;
+
+  /* ── G. Hero art (advanced) ── */
+  --wiy-art-invert: 0;
+  --wiy-logo-blend: multiply;
+  --wiy-case-blend: normal;
+  --wiy-gloss: 1;
+  --wiy-case-shadow: 0;
+
+  /* unused: old blob background */
+  --wiy-blob-1: 120, 180, 190;
+  --wiy-blob-2: 130, 160, 210;
+  --wiy-blob-3: 100, 170, 160;
+  --wiy-dust: 130, 175, 185;
 
   /* type */
   --wiy-font-sans: 'DM Sans', system-ui, sans-serif;
   --wiy-font-mono: 'DM Mono', ui-monospace, monospace;
+}
+
+/* ─── dusk (alternate) — violet night ────────────────────────────── */
+[data-theme='dusk'] {
+  color-scheme: dark;
+
+  /* ── A. Page ── */
+  --wiy-bg: #13111f;                 /* the page color; the waves show over this */
+  --wiy-surface: #1c1930;            /* forms, cards */
+  --wiy-surface-alt: #27223f;        /* comments, tags */
+
+  /* ── B. Text & lines ── */
+  --wiy-ink: #f6f1fb;                /* main text */
+  --wiy-ink-soft: #cdc5e2;
+  --wiy-ink-faint: #a8a0c6;
+  --wiy-line: #362f52;
+  --wiy-line-strong: #f4efff;
+
+  /* ── C. Accent ── */
+  --wiy-accent: #b9a7ff;             /* focus ring */
+  --wiy-accent-solid: #7447e6;       /* fill under white text (nav, tags, mp3 label) */
+  --wiy-accent-ink: #c9bbff;         /* accent used as text on dark surfaces */
+
+  /* ── D. Controls ── */
+  --wiy-control-bg: #1c1930;
+  --wiy-control-ink: #f6f1fb;
+  --wiy-control-border: #6a6094;
+  --wiy-field-bg: #1c1930;
+  --wiy-btn: #3a3358;
+
+  /* ── E. Options menu ── */
+  --wiy-glow: 185, 165, 255;               /* triplet: glow on the +, hovered pills, sheet focus */
+  --wiy-glass: rgba(28, 24, 50, 0.55);     /* the + box and the option pills */
+  --wiy-sheet-bg: rgba(24, 20, 44, 0.58);  /* the post img / post mp3 windows */
+  --wiy-menu-text: #ffffff;                /* text on the pills and windows */
+  --wiy-menu-text-hover: #ffffff;
+
+  /* ── F. Background waves (PS3Background) ── */
+  --wiy-wave-top: #0a0314;                 /* base gradient, top */
+  --wiy-wave-bottom: #280a3f;              /* base gradient, bottom */
+  --wiy-wave-1: #7d1ecf;                   /* the five ribbons, back to front */
+  --wiy-wave-2: #a324f5;
+  --wiy-wave-3: #5817a3;
+  --wiy-wave-4: #c73ff8;
+  --wiy-wave-5: #3a1174;
+  --wiy-wave-dust: 235, 195, 255;          /* triplet: the drifting particles */
+
+  /* ── G. Hero art (advanced) ── */
+  --wiy-art-invert: 1;                     /* 1 flips the dark graffiti to light */
+  --wiy-logo-blend: screen;
+  --wiy-case-blend: normal;
+  --wiy-gloss: 0;                          /* CD-case sheen; 0 on dark (it shows as a box) */
+  --wiy-case-shadow: 0.45;                 /* glow under the CD case, 0 = off */
+
+  /* unused: only the old blob background (AmbientBackground) reads these */
+  --wiy-blob-1: 130, 110, 235;
+  --wiy-blob-2: 255, 160, 150;
+  --wiy-blob-3: 100, 90, 215;
+  --wiy-dust: 185, 165, 255;
+
 }

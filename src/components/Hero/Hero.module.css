@@ -4,54 +4,6 @@
   position: relative;
 }
 
-/* ─── + share/create button ──────────────────────────────────
-   Moved from Header (was .shareBtn there, part of the pop-in reveal
-   group) — now a persistent floating button, visible the whole time
-   rather than waiting for the intro to finish. position: fixed so it
-   stays put on screen through scrolling, same idea as a standard
-   floating-action-button. Rendered outside .pinInner/the pinned scroll
-   hierarchy in Hero.jsx, so nothing in that hierarchy's own opacity/
-   transform tweens can affect it. */
-.shareFab {
-  position: absolute;
-  top: 80%;
-  right: 110%;
-  transform: translateX(-50%) translateY(-50%) rotate(0deg);
-  z-index: 2000;
-  /* it's a <button> (it toggles the post label instead of navigating
-     directly), so reset the browser's default button chrome to keep the
-     same plain-text look it had as a link. */
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-  font-size: 48px;
-  line-height: 1;
-  color: #000000;
-  text-decoration: none;
-  text-transform: lowercase;
-  cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.3s ease;
-}
-
-.shareFab:hover {
-  opacity: 0.6;
-}
-
-/* rotates the + into a × while the post label is open, so the toggle
-   state reads visually rather than the glyph just staying a static +. */
-.shareFab[data-open] {
-  transform: translateX(-50%) translateY(-50%) rotate(45deg);
-}
-
-@media (max-width: 768px) {
-  .shareFab {
-    top: 16px;
-    right: 16px;
-    font-size: 34px;
-  }
-}
-
 /* ─── fixed footer ───────────────────────────────────────────
    Pinned to the bottom of the viewport so it stays visible through
    scrolling instead of only appearing once the page scrolls all the way
@@ -79,12 +31,12 @@
      future paints behind every real child without needing z-index tuning
      on any of them. */
   isolation: isolate;
-  /* plain solid color, no gradient — opaque so the pinned intro doesn't
-     show the Header/page bleeding through underneath while scrolling.
-     Matches the site's own background (body { background-color: #f7f4ef }
-     in global.css) rather than an arbitrary color, so the Hero doesn't
-     visibly clash with the page it hands off to. */
-  background: #f7f4ef;
+  /* transparent on purpose: the site-wide PS3Background canvas (App.jsx,
+     fixed, z-index 0) has to show through the hero. The page colour under it
+     is still the theme's own --wiy-bg, via .app/body, so nothing bleeds
+     through — pinSpacing keeps the page content below the pinned hero, never
+     under it. */
+  background: transparent;
 }
 
 /* ─── case wrapper ───────────────────────────────────────── */
@@ -104,53 +56,6 @@
      every animation frame; a CSS transition on the same property would
      re-animate each of those frame updates on top of GSAP's own easing,
      fighting it instead of smoothing anything. */
-}
-
-/* plain "menu option" look — border, padding, hover-invert. Purely visual;
-   combine with .postHud below for the popup's position + open/close state. */
-.opt {
-  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: #9fb8d4;
-  text-transform: lowercase;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(159, 184, 212, 0.35);
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-  white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.opt:hover {
-  background: #eaf2fb;
-  color: #04080d;
-}
-
-.optActive {
-  background: #eaf2fb;
-  color: #04080d;
-}
-
-/* separate HUD, deliberately not nested inside OptionsMenu — that
-   always-visible, orbiting block is untouched by the + entirely. This
-   pops out right next to the + button instead. Combined with .opt in
-   Hero.jsx for the bordered menu-option look; this class only carries
-   position + the open/close hidden-by-default state. */
-.postHud {
-  position: absolute;
-  top: 65%;
-  right: 110%;
-  /* no baked-in translate(-50%, -50%) here — GSAP's y/scale tween in
-     Hero.jsx would decompose that into a single net x/y and clobber the
-     centering the moment it sets y to an explicit value. The centering
-     is instead applied once via gsap.set's xPercent/yPercent (which GSAP
-     tracks separately from x/y), same pattern LogoDisc's .ambientGroup
-     uses for the same reason. */
-  opacity: 0;
-  z-index: 2000;
 }
 
 /* ─── idle float (rest state, ps3-xmb style hover) ──────────

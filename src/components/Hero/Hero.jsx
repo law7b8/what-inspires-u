@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Link } from 'react-router-dom';
 import CaseDisc from './CaseDisc';
 import LogoDisc from './LogoDisc';
 import OptionsMenu from './OptionsMenu';
+import PlusMenu from './PlusMenu';
+import FloatingFiles from './FloatingFiles';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
-import AmbientBackground from '../AmbientBackground/AmbientBackground';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const MAX_MP3_FILES = 8;
 
 // where the disc parks once it becomes the background watermark — also
 // duplicated (as a trivial one-liner) in LogoDisc.jsx, which needs the
@@ -34,8 +36,13 @@ export default function Hero() {
     const pinRef = useRef(null);
     const caseWrapRef = useRef(null);
     const hintRef = useRef(null);
-    const postHudRef = useRef(null); // separate popup near the + button, holds only the "post" link — the orbiting options block is untouched by the + entirely
-    const [optionsOpen, setOptionsOpen] = useState(false);
+
+    // .mp3 files launched from the + menu, oldest dropped past the cap so the
+    // hero doesn't fill up. In-memory only — they don't survive a reload.
+    const [mp3Files, setMp3Files] = useState([]);
+    const launchMp3 = (track, origin) => {
+        setMp3Files((files) => [...files, { ...track, origin, id: crypto.randomUUID() }].slice(-MAX_MP3_FILES));
+    };
 
     const caseDiscRef = useRef(null);    // CaseDisc's imperative handle: { discRef, imgGroupRef, boostSpin }
     const logoDiscRef = useRef(null);    // LogoDisc's imperative handle: { groupRef, boostSpin }
@@ -47,13 +54,6 @@ export default function Hero() {
         if (!hero || !pinEl) return;
 
         const ctx = gsap.context(() => {
-            // centers .postHud on its top/right anchor point — set here,
-            // unconditionally (not inside the mm.add branch below), so
-            // it's correct even under reduced motion, where the open/close
-            // effect (further below) only ever touches opacity, never
-            // xPercent/yPercent.
-            if (postHudRef.current) gsap.set(postHudRef.current, { xPercent: -50, yPercent: -50 });
-
             const mm = gsap.matchMedia();
 
             // ── full experience — the pin/scroll-hijack, the mouse
@@ -323,35 +323,6 @@ export default function Hero() {
         };
     }, []);
 
-    // ── + toggle — pressing the + reveals postHudRef only: a standalone
-    // popup next to the + button holding just the "post" link, its own
-    // separate HUD. The orbiting/rotating options block (OptionsMenu) is a
-    // completely different, always-visible thing — the + doesn't touch it
-    // at all, on purpose (it shouldn't hide/show along with a button
-    // toggle it has nothing to do with). Kept as its own effect, separate
-    // from the big intro effect above, since it just reacts to
-    // optionsOpen rather than running once on mount. postHudRef stays
-    // mounted the whole time (never conditionally rendered) so GSAP can
-    // animate it in and out smoothly instead of popping abruptly;
-    // pointer-events/aria-hidden track the open state so it's not
-    // clickable or announced while closed.
-    useEffect(() => {
-        if (!postHudRef.current) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            gsap.set(postHudRef.current, { opacity: optionsOpen ? 1 : 0 });
-            return;
-        }
-        if (optionsOpen) {
-            gsap.to(postHudRef.current, {
-                opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.7)',
-            });
-        } else {
-            gsap.to(postHudRef.current, {
-                opacity: 0, y: -10, scale: 0.9, duration: 0.25, ease: 'power2.in',
-            });
-        }
-    }, [optionsOpen]);
-
     return (
         <>
             {/* Footer — pinned to the bottom of the screen (position:
@@ -366,50 +337,18 @@ export default function Hero() {
 
             <section className={styles.hero} id="hero" ref={heroRef}>
                 <div className={styles.pinInner} ref={pinRef}>
-                    {/* .pinInner's own background is a flat opaque color
-                        (by design — see its comment above), which would
-                        otherwise completely hide the site-wide ambient
-                        layer behind this pinned, full-viewport section.
-                        Rendered again here, in front of that flat color but
-                        behind the real content, riding the isolation:
-                        isolate stacking context .pinInner already sets up
-                        for exactly this. */}
-                    <AmbientBackground />
+
+                    {/* + toggle, its cascading options down the left side,
+                        and the post-img fill-out sheet — all self-contained
+                        in PlusMenu. Deliberately independent of
+                        OptionsMenu (the orbiting text block). */}
+                    <PlusMenu onLaunchMp3={launchMp3} />
+
+                    {/* .mp3 files shot in from the "post mp3" sheet — they
+                        float around inside the hero's bounds. */}
+                    <FloatingFiles files={mp3Files} />
 
                     <div className={styles.floatCase}>
-                        {/* no longer navigates directly — pressing it
-                            toggles postHudRef, its own separate popup
-                            right here next to the button, open/closed.
-                            Doesn't touch OptionsMenu at all. data-open
-                            drives the +/× rotation in CSS. */}
-                        <button
-                            type="button"
-                            className={styles.shareFab}
-                            onClick={() => setOptionsOpen((open) => !open)}
-                            aria-expanded={optionsOpen}
-                            aria-label={optionsOpen ? 'close create post' : 'create a post'}
-                            data-open={optionsOpen || undefined}
-                        >
-                            +
-                        </button>
-
-                        {/* separate HUD, deliberately not nested inside
-                            OptionsMenu — just the "post" link, popping out
-                            right next to the + button. Stays mounted the
-                            whole time so GSAP can animate it in/out
-                            smoothly; pointer-events/aria-hidden track
-                            optionsOpen so it's inert while closed. */}
-                        <Link
-                            to="/new"
-                            className={`${styles.opt} ${styles.postHud}`}
-                            ref={postHudRef}
-                            style={{ pointerEvents: optionsOpen ? 'auto' : 'none' }}
-                            aria-hidden={!optionsOpen}
-                            tabIndex={optionsOpen ? 0 : -1}
-                        >
-                            post
-                        </Link>
-
                         <div className={styles.caseWrap} ref={caseWrapRef}>
                             <OptionsMenu ref={optionsMenuRef} logoRef={logoDiscRef} />
                             <SideImage />

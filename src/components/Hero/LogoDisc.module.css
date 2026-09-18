@@ -80,13 +80,12 @@
      counter-offset, so it centers on .ambientParallax's own middle
      (which .ambientFloat above now also centers on the true viewport). */
   top: 57%;
-  left: 51%;
+  left: 52%;
   transform: translate(-50%, -50%);
-  width: 370px;
-  max-width: 62vw;
-  height: 370px;
+  width: 450px;
+  height: 450px;
   pointer-events: none;
-  mix-blend-mode: multiply;
+  mix-blend-mode: var(--wiy-logo-blend, multiply);
   will-change: transform, opacity;
   transform-style: preserve-3d;
 }

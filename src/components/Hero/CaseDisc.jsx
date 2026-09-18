@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { gsap } from 'gsap';
 import { createSpinBooster } from './spinBooster';
+import { DISC_SPIN, createYSpin } from './discSpin';
 import styles from './CaseDisc.module.css';
 
 // The CD case/disc — front+back case artwork with real Z-depth, a spine,
@@ -32,17 +33,14 @@ const CaseDisc = forwardRef(function CaseDisc(_props, ref) {
         const ctx = gsap.context(() => {
             gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
 
-            // the case's own idle tumble — runs the whole time, independent
-            // of the CSS bob on the wrapper divs and of Hero's scroll
-            // timeline, which only ever touches scale/z/opacity/rotationX/Y
-            // on these same elements during the fly-apart (a one-time
-            // tween, not a fight over the same properties this perpetual
-            // loop owns: rotationZ on discRef, all three axes on the image
-            // group).
-            const caseTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-            caseTumble
-                .to(caseImgGroupRef.current, { rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360', duration: 240 }, 0)
-                .to(discRef.current, { rotationZ: '+=360', duration: 360 }, 0);
+            // the case's own idle spin — Y axis only, at the case's rate
+            // from discSpin.js (paired with the logo's, which turns at a
+            // different rate). Runs the whole time, independent of the CSS
+            // bob on the wrapper divs and of Hero's scroll timeline, which
+            // only ever touches scale/z/opacity on the image group (and
+            // rotationX/Y on discRef, a different element) during the
+            // fly-apart.
+            const caseTumble = createYSpin(caseImgGroupRef.current, DISC_SPIN.case.seconds);
 
             boosterRef.current = createSpinBooster(caseTumble);
 
@@ -68,18 +66,34 @@ const CaseDisc = forwardRef(function CaseDisc(_props, ref) {
                             instead of a flat drop-shadow, so it holds up as
                             it tumbles in 3D — see .discCaseGroup */}
                         <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
+                            {/* a two-sided slab: each face has its own
+                                dark shadow layer behind it, so the case has
+                                depth from the front AND after it flips.
+                                Front view: face (z 0) over its shadow (z -35).
+                                Rear view (rotated 180): rear face (at -35)
+                                over its shadow (at 0). Every layer hides its
+                                own backface, so only the side facing you
+                                draws. The shadows are wrapper divs so their
+                                blur/darken filter never sits on the same
+                                element as backface-visibility. */}
                             <img
                                 src="/cd1.png"
                                 className={styles.discCase}
                                 alt=""
                                 aria-hidden="true"
                             />
+                            <div className={`${styles.layer} ${styles.shadowFront}`}>
+                                <img src="/cd1.png" alt="" aria-hidden="true" />
+                            </div>
                             <img
                                 src="/cd1.png"
-                                className={`${styles.discCase} ${styles.discCaseBack}`}
+                                className={`${styles.discCase} ${styles.discCaseRear}`}
                                 alt=""
                                 aria-hidden="true"
                             />
+                            <div className={`${styles.layer} ${styles.shadowRear}`}>
+                                <img src="/cd1.png" alt="" aria-hidden="true" />
+                            </div>
                         </div>
                     </div>
                 </div>

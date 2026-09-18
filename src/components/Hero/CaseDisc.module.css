@@ -34,29 +34,26 @@
   }
 }
 
-/* soft contact glow under the case — was a dark contact shadow, which
-   read fine against the site's old light background but would just
-   vanish against this dark one. A glowing blue reflection (like an XMB
-   icon's glossy floor) does the same "grounding" job here instead —
-   shrinks and fades as it lifts, timed to match .floatDisc so it reads as
-   that layer's own light. Left commented out (as found — this was
-   disabled directly in Hero.module.css before this file existed); the
-   .caseShadow div still renders, it just has no visible style right now.
+/* soft contact glow under the case — a glowing reflection (like an XMB
+   icon's glossy floor) rather than a dark shadow, which would vanish on a
+   dark theme. Colored from the theme's --wiy-glow; --wiy-case-shadow is its
+   strength (0 = off, which is how paper keeps it). Shrinks and fades as the
+   case lifts, timed to match .floatDisc so it reads as that layer's own
+   light. */
 .caseShadow {
   position: absolute;
   left: 50%;
-  bottom: 6%;
+  bottom: 2%;
   width: 62%;
   height: 34px;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(109, 109, 109, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
-  filter: blur(3px);
+  background: radial-gradient(ellipse at center, rgba(var(--wiy-glow, 160, 200, 255), var(--wiy-case-shadow, 0)) 0%, rgba(var(--wiy-glow, 160, 200, 255), 0) 72%);
+  filter: blur(6px);
   pointer-events: none;
   z-index: -1;
   animation: shadowPulse 3.4s ease-in-out infinite;
   animation-delay: -1.4s;
 }
-*/
 
 @keyframes shadowPulse {
 
@@ -152,6 +149,9 @@
       rgba(255, 255, 255, 0) 270deg,
       rgba(255, 255, 255, 0.4) 360deg);
   mix-blend-mode: overlay;
+  /* fades out on dark themes, where the overlay blend shows as a lighter
+     500x500 box instead of a sheen */
+  opacity: var(--wiy-gloss, 1);
   pointer-events: none;
 }
 
@@ -183,19 +183,48 @@
      stuck invisible once it first flips past 90°, even after rotating
      back to face-on. That's the "one of the case images disappears and
      never comes back" bug — this layer only needs the culling, not the
-     blur (discCaseBack still carries its own blur safely, since it has
-     no backface-visibility to interact with). */
+     blur (the shadow layers below get theirs on an <img> inside a
+     wrapper, so it's never on the same element as this). */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* dark themes: multiply drops the PNG's light translucent box into the
+     background and turns the case into smoked glass */
+  mix-blend-mode: var(--wiy-case-blend, normal);
+}
+
+/* the case is a two-sided slab (see CaseDisc.jsx): front face at z 0, its
+   shadow at -35; rear face at -35 turned 180deg, its shadow at 0. Every
+   layer hides its own backface, so only the side facing the viewer draws —
+   and each side always has its shadow behind it, however the case turns. */
+.discCaseRear {
+  transform: translateZ(-35px) rotateY(180deg);
+}
+
+/* shadow layers are wrappers so the filter on the <img> inside is never on
+   the same element as backface-visibility (the Chromium/WebKit bug noted
+   on .discCase above) */
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* the "inner edge" — a darker duplicate of the same artwork sitting behind
-   the front layer in Z. No backface-visibility here (unlike .discCase), so
-   it keeps showing rather than vanishing at the angles where the front
-   layer flips away mid-tumble, reading as the case's own back/edge. */
-.discCaseBack {
-  transform: translateZ(-35px);
+.layer img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: var(--wiy-case-blend, normal);
   filter: blur(0.3px) brightness(0.5) saturate(0.6);
+}
+
+.shadowFront {
+  transform: translateZ(-35px);
+}
+
+.shadowRear {
+  transform: rotateY(180deg);
 }
 
 @media (max-width: 768px) {

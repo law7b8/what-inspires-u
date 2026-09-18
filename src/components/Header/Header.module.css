@@ -23,12 +23,12 @@
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 11px;
     letter-spacing: 0.08em;
-    color: #6b6459;
+    color: var(--wiy-ink-soft);
     text-transform: lowercase;
 }
 
 .topbarLink {
-    color: #1a1714;
+    color: var(--wiy-ink);
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
@@ -76,13 +76,13 @@
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     letter-spacing: 0.16em;
-    color: #8a7f6e;
+    color: var(--wiy-ink-faint);
     text-transform: lowercase;
 }
 
 .desc {
     font-size: 12.5px;
-    color: #6b6459;
+    color: var(--wiy-ink-soft);
     font-weight: 300;
     line-height: 1.55;
     max-width: 190px;
@@ -154,7 +154,7 @@
     font-size: 48px;
     font-weight: 700;
     line-height: 0.95;
-    color: #1a1714;
+    color: var(--wiy-ink);
     letter-spacing: -0.01em;
     text-transform: lowercase;
     white-space: nowrap;
@@ -163,13 +163,13 @@
 
 .title span {
     font-weight: 500;
-    color: #6b6459;
+    color: var(--wiy-ink-soft);
 }
 
 .rule {
     width: 100%;
     height: 1px;
-    background: #1a1714;
+    background: var(--wiy-ink);
     margin: 10px 0 6px;
     position: relative;
     z-index: 2;
@@ -179,7 +179,7 @@
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     letter-spacing: 0.18em;
-    color: #8a7f6e;
+    color: var(--wiy-ink-faint);
     text-transform: lowercase;
     position: relative;
     z-index: 2;
@@ -200,7 +200,7 @@
 .monoLabel {
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
-    color: #8a7f6e;
+    color: var(--wiy-ink-faint);
     letter-spacing: 0.1em;
     text-transform: lowercase;
 }
@@ -210,18 +210,18 @@
 .dividerRow {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    border-top: 1px solid #1a1714;
+    border-top: 1px solid var(--wiy-ink);
 }
 
 .dividerCell {
     padding: 8px 28px;
     font-size: 10px;
     letter-spacing: 0.1em;
-    color: #8a7f6e;
+    color: var(--wiy-ink-faint);
 }
 
 .dividerCell:not(:last-child) {
-    border-right: 1px solid #c8bfaf;
+    border-right: 1px solid var(--wiy-line);
 }
 
 .dividerCell:last-child {
@@ -268,7 +268,7 @@
 
     .dividerCell:not(:last-child) {
         border-right: none;
-        border-bottom: 1px solid #c8bfaf;
+        border-bottom: 1px solid var(--wiy-line);
     }
 
     .dividerCell:last-child {

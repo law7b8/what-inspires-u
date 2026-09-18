@@ -24,7 +24,7 @@
      Chromium/WebKit bug (the element gets stuck invisible after flipping
      past 90°). A parent's filter blurs its whole subtree anyway, so this
      is visually identical without the risk. */
-  filter: blur(4px);
+  filter: blur(4px) invert(var(--wiy-art-invert, 0));
 }
 
 .sideImage {

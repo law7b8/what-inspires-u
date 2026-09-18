@@ -33,7 +33,7 @@
   left: -8%;
   width: 55vw;
   height: 55vw;
-  background: radial-gradient(circle at center, rgba(150, 133, 190, 0.30) 0%, rgba(150, 133, 190, 0) 70%);
+  background: radial-gradient(circle at center, rgba(var(--wiy-blob-1), 0.30) 0%, rgba(var(--wiy-blob-1), 0) 70%);
   animation: driftOne 52s ease-in-out infinite;
 }
 
@@ -42,7 +42,7 @@
   right: -10%;
   width: 60vw;
   height: 60vw;
-  background: radial-gradient(circle at center, rgba(168, 150, 199, 0.26) 0%, rgba(168, 150, 199, 0) 72%);
+  background: radial-gradient(circle at center, rgba(var(--wiy-blob-2), 0.26) 0%, rgba(var(--wiy-blob-2), 0) 72%);
   animation: driftTwo 64s ease-in-out infinite;
 }
 
@@ -51,7 +51,7 @@
   left: 40%;
   width: 40vw;
   height: 40vw;
-  background: radial-gradient(circle at center, rgba(140, 122, 176, 0.22) 0%, rgba(140, 122, 176, 0) 75%);
+  background: radial-gradient(circle at center, rgba(var(--wiy-blob-3), 0.22) 0%, rgba(var(--wiy-blob-3), 0) 75%);
   animation: driftThree 74s ease-in-out infinite;
 }
 
@@ -100,8 +100,8 @@
   inset: -10%;
   opacity: 0.16;
   background-image:
-    radial-gradient(rgba(160, 145, 195, 0.9) 1.5px, transparent 2px),
-    radial-gradient(rgba(160, 145, 195, 0.7) 1.5px, transparent 2px);
+    radial-gradient(rgba(var(--wiy-dust), 0.9) 1.5px, transparent 2px),
+    radial-gradient(rgba(var(--wiy-dust), 0.7) 1.5px, transparent 2px);
   background-size: 140px 140px, 200px 200px;
   background-position: 0 0, 90px 130px;
   animation: dustDrift 120s linear infinite;
