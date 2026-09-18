@@ -1,0 +1,19 @@
+/* fills the hero (.pinInner) and clips to it — the files bounce off its
+   edges. Above the case, below the + menu (2000). Never blocks clicks. */
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* positioned every frame by the ticker in FloatingFiles.jsx; hidden until
+   its simulation exists so it doesn't flash at the corner */
+.floater {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  will-change: transform;
+}

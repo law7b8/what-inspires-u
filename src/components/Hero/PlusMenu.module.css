@@ -1,0 +1,395 @@
+/* ─── + options menu — macOS structure, PS3 XMB feel ──────────
+   Rounded glass surfaces and Mac-style windows (traffic lights, titlebar),
+   dressed like the PlayStation 3's XrossMediaBar: smoked dark glass, thin
+   white type, and a soft blue-white glow on the selected item, which also
+   swells slightly like an XMB icon. Every look-and-feel knob lives in the
+   block below — change a value here and the toggle, the options and the
+   sheets all follow. Everything in the column is centered on one vertical
+   axis. */
+.menu {
+  /* shared */
+  --mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --xmb-glow: 160, 200, 255;                    /* rgb of the glow */
+  --xmb-text: #ffffff;
+  --xmb-text-dim: rgba(255, 255, 255, 0.72);
+  --mac-glass: rgba(18, 22, 32, 0.52);          /* smoked glass */
+  --mac-glass-blur: blur(18px) saturate(150%);
+  --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+
+  /* options */
+  --opt-font: var(--mac-font);
+  --opt-font-size: 13px;
+  --opt-letter-spacing: 0.06em;
+  --opt-color: var(--xmb-text);
+  --opt-bg: var(--mac-glass);
+  --opt-hover-color: #ffffff;
+  --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
+  --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
+  --opt-radius: 10px;
+  --opt-pad-y: 8px;
+  --opt-pad-x: 24px;
+  --opt-shadow: var(--mac-hairline), var(--mac-shadow);
+  --opt-gap: 10px;          /* vertical space between options */
+  --opt-select-scale: 1.06; /* how much the selected option swells */
+  --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
+
+  /* + toggle */
+  --toggle-size: 44px;
+  --toggle-font-size: 30px;
+  --toggle-color: var(--xmb-text);
+  --toggle-bg: var(--mac-glass);
+  --toggle-radius: 50%;     /* 12px for a squircle-ish button */
+  --toggle-shadow: var(--mac-hairline), var(--mac-shadow);
+
+  /* fill-out sheet (a Mac window in XMB dress) */
+  --sheet-width: 340px;
+  --sheet-gap: 10px;        /* space between the option and where the sheet emerges */
+  --sheet-radius: 12px;
+  --sheet-bg: rgba(16, 20, 30, 0.93);
+  --sheet-shadow: var(--mac-hairline), 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(var(--xmb-glow), 0.18);
+  --titlebar-height: 36px;
+  --sheet-max-height: calc(84vh - 140px); /* keeps a sheet on screen; scrolls inside if the window is shorter */
+
+  position: absolute;
+  left: 32px; /* fixed gutter, so the menu sits beside the case instead of on it */
+  top: 20%;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* toggle + options share one centered axis */
+  gap: var(--opt-gap);
+  font-family: var(--mac-font);
+}
+
+/* ─── + toggle ───────────────────────────────────────────── */
+
+.toggle {
+  width: var(--toggle-size);
+  height: var(--toggle-size);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: var(--opt-font);
+  font-size: var(--toggle-font-size);
+  font-weight: 200;
+  line-height: 1;
+  color: var(--toggle-color);
+  text-shadow: 0 0 8px rgba(var(--xmb-glow), 0.8);
+  background: var(--toggle-bg);
+  -webkit-backdrop-filter: var(--mac-glass-blur);
+  backdrop-filter: var(--mac-glass-blur);
+  border: none;
+  border-radius: var(--toggle-radius);
+  box-shadow: var(--toggle-shadow);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  animation: xmbBreathe 3.6s ease-in-out infinite;
+}
+
+/* idle "breathing" glow, like an XMB icon waiting to be picked */
+@keyframes xmbBreathe {
+  0%, 100% { box-shadow: var(--toggle-shadow), 0 0 0 rgba(var(--xmb-glow), 0); }
+  50% { box-shadow: var(--toggle-shadow), 0 0 16px rgba(var(--xmb-glow), 0.55); }
+}
+
+.toggle:hover,
+.toggle[data-open] {
+  background: var(--opt-hover-bg), var(--mac-glass);
+  animation: none;
+  box-shadow: var(--toggle-shadow), var(--opt-glow);
+}
+
+.toggle:active {
+  transform: scale(0.94);
+}
+
+/* the glyph itself turns into a × — the button doesn't rotate, so its
+   shape stays put. aria-label carries the accessible name. */
+.toggle::before {
+  content: '+';
+  display: block;
+  margin-top: -2px; /* optical centering of the glyph */
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toggle[data-open]::before {
+  transform: rotate(135deg);
+}
+
+.toggle:focus-visible,
+.opt:focus-visible,
+.light:focus-visible {
+  outline: 2px solid rgba(var(--xmb-glow), 0.9);
+  outline-offset: 2px;
+}
+
+/* ─── cascading options ──────────────────────────────────── */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* every option the same width as the widest one */
+  gap: var(--opt-gap);
+}
+
+.item {
+  position: relative;
+  margin-left: calc((var(--count) - 1 - var(--i)) * var(--cascade-indent));
+  /* GSAP owns opacity/visibility/x from here — closed by default so there's
+     no flash before the first effect runs */
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* the option whose sheet is out stays above its later siblings */
+.item[data-sheet-open] {
+  z-index: 5;
+}
+
+.opt {
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 2; /* above the sheet, which starts tucked behind it */
+  box-sizing: border-box;
+  font-family: var(--opt-font);
+  font-size: var(--opt-font-size);
+  font-weight: 300;
+  letter-spacing: var(--opt-letter-spacing);
+  text-align: center;
+  color: var(--opt-color);
+  text-shadow: 0 0 6px rgba(var(--xmb-glow), 0.5);
+  text-transform: lowercase;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: var(--opt-pad-y) var(--opt-pad-x);
+  background: var(--opt-bg);
+  -webkit-backdrop-filter: var(--mac-glass-blur);
+  backdrop-filter: var(--mac-glass-blur);
+  border: none;
+  border-radius: var(--opt-radius);
+  box-shadow: var(--opt-shadow);
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* the XMB selection: brighter glass, a soft glow, and a small swell */
+.opt:hover,
+.optActive {
+  background: var(--opt-hover-bg), var(--opt-bg);
+  color: var(--opt-hover-color);
+  box-shadow: var(--mac-hairline), var(--opt-glow);
+  transform: scale(var(--opt-select-scale));
+}
+
+.opt:active {
+  transform: scale(0.97);
+}
+
+/* ─── sheet (a Mac window) ───────────────────────────────── */
+
+/* a clip window that starts at the option's right edge: the sheet slides
+   inside it from the left, so it appears to come out from behind the
+   option. Clipped on the left only — the other sides are opened up so the
+   sheet's shadow isn't cut off. (clip-path makes this a backdrop root, so
+   the sheet itself uses a near-opaque background instead of live blur.) */
+.sheetWindow {
+  position: absolute;
+  top: 0;
+  left: calc(100% + var(--sheet-gap));
+  width: var(--sheet-width);
+  clip-path: inset(-60px -60px -60px 0);
+  pointer-events: none;
+}
+
+.sheet {
+  visibility: hidden; /* GSAP autoAlpha takes over */
+  opacity: 0;
+  pointer-events: auto;
+  will-change: transform;
+  overflow: hidden;
+  background: var(--sheet-bg);
+  border-radius: var(--sheet-radius);
+  box-shadow: var(--sheet-shadow);
+  font-family: var(--mac-font);
+  color: var(--xmb-text);
+}
+
+.titlebar {
+  position: relative;
+  height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.lights {
+  display: flex;
+  gap: 8px;
+}
+
+.light {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+}
+
+.close { background: #ff5f57; cursor: pointer; }
+.minimize { background: #febc2e; }
+.zoom { background: #28c840; }
+
+/* × glyph shows on the red light while hovering the group, like the real thing */
+.lights:hover .close { color: rgba(0, 0, 0, 0.55); }
+
+.titleText {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--xmb-text);
+  text-shadow: 0 0 6px rgba(var(--xmb-glow), 0.5);
+  pointer-events: none;
+}
+
+.sheetBody {
+  padding: 16px;
+  overflow-y: auto;
+  color-scheme: dark; /* dark scrollbars */
+  /* later options start lower down, so each step loses a bit of height */
+  max-height: calc(var(--sheet-max-height) - var(--i) * 50px - var(--titlebar-height));
+}
+
+/* the form is just content of the window now — no card of its own. Doubled
+   class for specificity over the global form/.polaroid rules. */
+.sheetBody .sheetForm.sheetForm {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* dark-glass controls inside the sheet */
+.sheetBody label {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--xmb-text-dim);
+}
+
+.sheetBody input,
+.sheetBody textarea {
+  margin-bottom: 12px;
+  padding: 6px 9px;
+  font-family: var(--mac-font);
+  font-size: 13px;
+  color: var(--xmb-text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.sheetBody input::placeholder,
+.sheetBody textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sheetBody input:focus,
+.sheetBody textarea:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(var(--xmb-glow), 0.9);
+  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.55);
+}
+
+.sheetBody textarea {
+  min-height: 80px;
+}
+
+.sheetBody button {
+  font-family: var(--mac-font);
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  color: var(--xmb-text);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sheetBody button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.45);
+}
+
+/* primary (submit) — the glowing default button */
+.sheetBody button[type='submit'] {
+  background: linear-gradient(rgba(255, 255, 255, 0.4), rgba(var(--xmb-glow), 0.35));
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 14px rgba(var(--xmb-glow), 0.45);
+}
+
+.sheetBody button[type='submit']:hover:not(:disabled) {
+  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(var(--xmb-glow), 0.5));
+  box-shadow: 0 0 20px rgba(var(--xmb-glow), 0.75);
+}
+
+.sheetBody button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Mp3Form's error line is dark red by default — lift it for the dark window */
+.sheetBody [role='alert'] {
+  color: #ff9a9a;
+}
+
+/* ─── responsive ─────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .menu {
+    left: 12px;
+    top: 18%;
+    --opt-pad-x: 18px;
+    --toggle-size: 40px;
+    --toggle-font-size: 28px;
+    --sheet-width: min(340px, calc(100vw - 150px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle::before,
+  .opt,
+  .toggle {
+    transition: none;
+    animation: none;
+  }
+
+  .opt:hover,
+  .optActive {
+    transform: none;
+  }
+}
