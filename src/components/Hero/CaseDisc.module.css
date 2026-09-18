@@ -1,0 +1,227 @@
+/* ─── case body ──────────────────────────────────────────── */
+
+.caseBody {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: -1000;
+  /* glossy XMB-style floor reflection — mirrors whatever's currently
+     rendered inside (case tumbling and all), fading out with the gradient.
+     -webkit-box-reflect is WebKit/Blink-only (Chrome, Edge, Safari, Opera);
+     Firefox just won't show a reflection here, no breakage either way. */
+  -webkit-box-reflect: below 6px linear-gradient(to bottom, transparent, transparent 55%, rgba(180, 220, 255, 0.14));
+}
+
+/* ─── idle float (rest state, ps3-xmb style hover) ──────────
+   Plain CSS animation on a wrapper element, not on discRef itself (which
+   GSAP drives) — so this bob composes with the scroll timeline/tumble
+   instead of fighting them. */
+.floatDisc {
+  animation: floatBob 20s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
+
+@keyframes floatBob {
+
+  0%,
+  50% {
+    transform: translateY(0);
+  }
+
+  80% {
+    transform: translateY(-5px);
+  }
+}
+
+/* soft contact glow under the case — was a dark contact shadow, which
+   read fine against the site's old light background but would just
+   vanish against this dark one. A glowing blue reflection (like an XMB
+   icon's glossy floor) does the same "grounding" job here instead —
+   shrinks and fades as it lifts, timed to match .floatDisc so it reads as
+   that layer's own light. Left commented out (as found — this was
+   disabled directly in Hero.module.css before this file existed); the
+   .caseShadow div still renders, it just has no visible style right now.
+.caseShadow {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 62%;
+  height: 34px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(109, 109, 109, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: -1;
+  animation: shadowPulse 3.4s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
+*/
+
+@keyframes shadowPulse {
+
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: translateX(-50%) scale(0.72);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .floatDisc,
+  .caseShadow {
+    animation: none;
+  }
+}
+
+/* ─── cd spine ───────────────────────────────────────────── */
+
+.spine {
+  width: 24px;
+  height: 500px;
+  border-right: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.spine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  pointer-events: none;
+}
+
+.spineText {
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.2em;
+  color: #a9c2e0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+/* ─── disc ───────────────────────────────────────────────── */
+
+.discSlot {
+  width: auto;
+  height: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.disc {
+  position: relative;
+  will-change: transform;
+  flex-shrink: 0;
+  width: 500px;
+  height: 500px;
+  /* visible, not hidden: the case image tumbles continuously in 3D
+     (this component's own caseTumble), so a clipped box chops off its
+     edges mid-rotation instead of just cropping the static overhang */
+  overflow: visible;
+}
+
+.disc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* glossy highlight sweep — a conic gradient blended with overlay reads
+     as a curved, reflective sheen across the case rather than a flat
+     image, which is most of what actually sells the "3D object" look
+     here. */
+  background: conic-gradient(rgba(255, 255, 255, 0.4) 0deg,
+      rgba(255, 255, 255, 0) 90deg,
+      rgba(255, 255, 255, 0.2) 180deg,
+      rgba(255, 255, 255, 0) 270deg,
+      rgba(255, 255, 255, 0.4) 360deg);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* wraps the case artwork's front + back layers and is what CaseDisc's own
+   tumble (and Hero's shared scroll timeline, via the imgGroupRef exposed
+   through the imperative handle) actually rotate/move — the images inside
+   only carry a static Z offset, so they stay correctly stacked in real 3D
+   through every rotation instead of faking an edge with a shadow painted
+   in one fixed direction (which breaks the illusion once it spins). */
+.discCaseGroup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 500px;
+  width: 100%;
+  z-index: 500;
+  transform-style: preserve-3d;
+}
+
+.discCase {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* no filter here (was blur(0.3px)) — combining `filter` with
+     `backface-visibility: hidden` on a continuously 3D-rotated element
+     hits a real Chromium/WebKit compositing bug where the element gets
+     stuck invisible once it first flips past 90°, even after rotating
+     back to face-on. That's the "one of the case images disappears and
+     never comes back" bug — this layer only needs the culling, not the
+     blur (discCaseBack still carries its own blur safely, since it has
+     no backface-visibility to interact with). */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* the "inner edge" — a darker duplicate of the same artwork sitting behind
+   the front layer in Z. No backface-visibility here (unlike .discCase), so
+   it keeps showing rather than vanishing at the angles where the front
+   layer flips away mid-tumble, reading as the case's own back/edge. */
+.discCaseBack {
+  transform: translateZ(-35px);
+  filter: blur(0.3px) brightness(0.5) saturate(0.6);
+}
+
+@media (max-width: 768px) {
+  .caseBody {
+    width: 260px;
+    height: 260px;
+  }
+
+  .spine {
+    height: 260px;
+  }
+
+  .disc {
+    width: 200px;
+    height: 200px;
+  }
+
+  .discSlot {
+    width: 200px;
+    height: 200px;
+  }
+
+  /* .discCaseGroup's base rule hardcodes height: 500px (no override existed
+     here even before the front/back-layer refactor) — on a 200px-wide .disc
+     that left it a 200×500 box, badly oversized and shifted off-screen */
+  .discCaseGroup {
+    height: 200px;
+  }
+}

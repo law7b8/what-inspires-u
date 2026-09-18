@@ -1,0 +1,121 @@
+/* ─── options (left column) ──────────────────────────────── */
+
+/* outer wrapper — carries the static anchor position (left/top) and gets
+   its x/y translated every frame in OptionsMenu.jsx to orbit the ambient
+   logo's live on-screen position. Kept separate from .options below so
+   that orbit translate never fights Hero's shared scroll timeline's own
+   x tween on .options — same "different element for different property"
+   pattern used throughout this component set (e.g. LogoDisc's
+   .ambientParallax vs. .ambientGroup). */
+.optionsOrbit {
+  position: absolute;
+  left: -20em;
+  top: -10%;
+  will-change: transform;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  will-change: transform;
+  /* always visible — deliberately untouched by Hero's + button, which
+     controls its own separate postHud popup instead. Spins continuously
+     on X — perpendicular to the ambient logo's own Y-axis rotation (see
+     optionsTumble in OptionsMenu.jsx). No filter on this element, so
+     backface-visibility: hidden here is safe from the filter +
+     backface-visibility Chromium/WebKit bug fixed elsewhere in this
+     component set — this just makes the text fade out of view for the
+     far half of each rotation instead of showing it mirrored/backwards,
+     since .options has no separate "back" layer the way the case/logo
+     do. */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ─── title ─────────────────────────────────────────────── */
+
+.titleLink {
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+}
+
+.title {
+  font-size: 70px;
+  font-weight: 500;
+  letter-spacing: -0.09em;
+  line-height: 0.95;
+  color: #000000;
+  text-transform: lowercase;
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* blinking caret shown only while .options carries data-typing — see the
+   typewriter effect in OptionsMenu.jsx. */
+.typingCursor {
+  display: none;
+  width: 4px;
+  height: 0.9em;
+  background: #000000;
+  margin-left: 2px;
+  vertical-align: -0.1em;
+  animation: caretBlink 1s step-end infinite;
+}
+
+[data-typing] .typingCursor {
+  display: inline-block;
+}
+
+@keyframes caretBlink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typingCursor {
+    animation: none;
+  }
+}
+
+/* ─── top bar ─────────────────────────────────────────── */
+
+.topbarLink {
+  color: #000000;
+  text-decoration: none;
+  font-size: 70px;
+  font-weight: 500;
+  letter-spacing: -0.09em;
+}
+
+.topbarLink:hover {
+  text-decoration: underline;
+}
+
+/* ─── responsive ─────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* on small screens the orbit doesn't have room to run — collapse back
+     to a normal, static, in-flow block above the case instead. */
+  .optionsOrbit {
+    position: static;
+    transform: none;
+  }
+
+  .options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1px;
+  }
+}

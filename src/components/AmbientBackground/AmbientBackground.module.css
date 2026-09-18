@@ -1,0 +1,128 @@
+/* fixed behind everything else on the page. NOT z-index: -1 — .app (its
+   parent, in App.jsx) has position: relative with its own opaque
+   background-color but no z-index, so it never becomes a stacking context;
+   a negative z-index here would escape .app entirely and land behind the
+   ROOT stacking context, meaning .app's own solid background paints over
+   it and hides it completely (this is what was happening). z-index: 0
+   keeps this ordered by plain DOM position instead — it paints after
+   .app's own background (as .app's first child) but before every later
+   sibling (Header/Hero/main), which is exactly "behind all real content". */
+.ambientBackground {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* three soft lavender blobs, heavily blurred and barely opaque — drifting
+   slowly and at different speeds/paths so the light never settles into an
+   obviously repeating pattern. Muted, low-saturation purple (not a bright
+   violet) to read as dust/haze rather than a colored spotlight. */
+.blobOne,
+.blobTwo,
+.blobThree {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  will-change: transform;
+}
+
+.blobOne {
+  top: -10%;
+  left: -8%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle at center, rgba(150, 133, 190, 0.30) 0%, rgba(150, 133, 190, 0) 70%);
+  animation: driftOne 52s ease-in-out infinite;
+}
+
+.blobTwo {
+  bottom: -15%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle at center, rgba(168, 150, 199, 0.26) 0%, rgba(168, 150, 199, 0) 72%);
+  animation: driftTwo 64s ease-in-out infinite;
+}
+
+.blobThree {
+  top: 35%;
+  left: 40%;
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle at center, rgba(140, 122, 176, 0.22) 0%, rgba(140, 122, 176, 0) 75%);
+  animation: driftThree 74s ease-in-out infinite;
+}
+
+@keyframes driftOne {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(6vw, 8vh) scale(1.12);
+  }
+}
+
+@keyframes driftTwo {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-7vw, -6vh) scale(1.08);
+  }
+}
+
+@keyframes driftThree {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-46%, -54%) scale(1.15);
+  }
+}
+
+/* fine dust speck texture — a small repeating tile of a few soft dots,
+   crawling diagonally at a near-imperceptible pace. Kept at very low
+   opacity so it reads as grain/dust in the air rather than a visible
+   pattern. */
+.dust {
+  position: absolute;
+  inset: -10%;
+  opacity: 0.16;
+  background-image:
+    radial-gradient(rgba(160, 145, 195, 0.9) 1.5px, transparent 2px),
+    radial-gradient(rgba(160, 145, 195, 0.7) 1.5px, transparent 2px);
+  background-size: 140px 140px, 200px 200px;
+  background-position: 0 0, 90px 130px;
+  animation: dustDrift 120s linear infinite;
+}
+
+@keyframes dustDrift {
+  0% {
+    background-position: 0 0, 90px 130px;
+  }
+
+  100% {
+    background-position: 180px 260px, 270px 390px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .blobOne,
+  .blobTwo,
+  .blobThree,
+  .dust {
+    animation: none;
+  }
+}

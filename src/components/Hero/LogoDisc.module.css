@@ -1,0 +1,117 @@
+/* ─── ambient disc ───────────────────────────────────────── */
+/* Fixed positioning lives on the wrapper so it can carry its own CSS bob
+   without fighting GSAP, which drives every transform on the <img> itself
+   (position/rotation/scale) for the scroll intro and the idle tumble. The
+   wrapper spans the full viewport so the image's top/left: 50% still
+   centers exactly as before. */
+.ambientFloat {
+  position: fixed;
+  /* was also carrying top: -3%; right: 1% — those overrode two of the
+     four inset: 0 sides, shifting this viewport-spanning box (and
+     everything centered inside it) off from true center. inset: 0 alone
+     now spans the full viewport symmetrically. */
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+  pointer-events: none;
+  animation: floatBob 16s ease-in-out infinite;
+  animation-delay: -2.6s;
+}
+
+@keyframes floatBob {
+
+  0%,
+  50% {
+    transform: translateY(0);
+  }
+
+  80% {
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambientFloat {
+    animation: none;
+  }
+}
+
+/* mouse-parallax layer — sits between .ambientFloat (CSS bob, fixed) and
+   .ambientGroup (GSAP-owned x/y/scale/rotation). Kept as its own element
+   so the cursor-driven drift (translate only, set in LogoDisc.jsx) never
+   fights the properties Hero's scroll timeline/this component's own idle
+   tumble already own on ambientGroup itself. */
+.ambientParallax {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+/* soft glow cast by the ambient logo — orbits around center in
+   LogoDisc.jsx's syncShadowToSpin, tracking the same rotationX/rotationY
+   driving the logo's spin, so it reads as light from a tumbling 3D object
+   rather than a static blob. Sits behind .ambient via DOM order (painted
+   first). Blue glow rather than a dark shadow, matching CaseDisc's
+   (currently disabled) .caseShadow glow treatment. */
+.ambientShadow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(90, 180, 255, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* wraps the logo's front + back layers — reads as the disc inside the
+   case during the scroll intro, then parks and keeps spinning as a faint
+   watermark. This group is what LogoDisc's own tumble (and Hero's shared
+   scroll timeline, via the groupRef exposed through the imperative
+   handle) actually rotate/move/fade; the images inside only carry a
+   static Z offset, same real-depth approach as CaseDisc's discCaseGroup. */
+.ambientGroup {
+  position: absolute;
+  /* was top: 52%; left: 51.5% — a small deliberate-looking nudge off
+     dead-center. Back to exact 50%/50% + the translate(-50%, -50%)
+     counter-offset, so it centers on .ambientParallax's own middle
+     (which .ambientFloat above now also centers on the true viewport). */
+  top: 57%;
+  left: 51%;
+  transform: translate(-50%, -50%);
+  width: 370px;
+  max-width: 62vw;
+  height: 370px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+}
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  width: 80%;
+  height: 80%;
+  pointer-events: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* the logo's "inner edge" — same idea as CaseDisc's .discCaseBack: a
+   darker duplicate behind the front layer in Z, always visible (no
+   backface-visibility) so it reads as depth rather than a flat sticker as
+   the logo tumbles. */
+.ambientBack {
+  transform: translateZ(-28px);
+  filter: brightness(0.45) saturate(0.6);
+}
+
+@media (max-width: 768px) {
+  .ambientGroup {
+    width: 260px;
+  }
+}

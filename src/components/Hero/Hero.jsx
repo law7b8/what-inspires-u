@@ -1,280 +1,114 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
+import CaseDisc from './CaseDisc';
+import LogoDisc from './LogoDisc';
+import OptionsMenu from './OptionsMenu';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
+import AmbientBackground from '../AmbientBackground/AmbientBackground';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// where the disc parks once it becomes the background watermark — also
+// duplicated (as a trivial one-liner) in LogoDisc.jsx, which needs the
+// same values for its own reduced-motion parked state.
+const restX = () => window.innerWidth * 0.15;
+const restY = () => -window.innerHeight * -0.08;
+
+// Hero is now the orchestrator, not the owner, of the case/logo/options
+// blocks — each of those is its own self-contained component
+// (CaseDisc/LogoDisc/OptionsMenu/SideImage), with its own refs, its own
+// perpetual tumble, its own reduced-motion handling. What's left here is
+// only what genuinely has to stay centralized: the one shared scroll
+// timeline that flies all three apart together in the same scroll-scrubbed
+// beat, and the mouse-speed spin boost, which needs to hit-test against
+// multiple components' elements to decide which one(s) to spin up. Both
+// reach into the child components via the small imperative handles each
+// one exposes (a couple of raw refs + a boostSpin function) rather than
+// owning those elements directly.
 export default function Hero() {
     const heroRef = useRef(null);
     const pinRef = useRef(null);
     const caseWrapRef = useRef(null);
-    const caseImgGroupRef = useRef(null); // cd1.png front+back layers — the jewel case, flies away
-    const discRef = useRef(null);      // case body wrapper (spine + case)
-    const optionsOrbitRef = useRef(null); // outer wrapper — orbits the ambient logo's live position; optionsRef (inner) keeps its own self-spin + the scroll fade
-    const optionsRef = useRef(null);
-    const tmp3oTextRef = useRef(null); // typed in on mount — see the typewriter effect below
-    const titleTextRef = useRef(null); // "what inspires u?" — same typewriter loop, one plain span (no separate accent styling)
     const hintRef = useRef(null);
-    const ambientGroupRef = useRef(null);  // tempoLogo.png front+back layers — the disc that keeps spinning
-    const ambientShadowRef = useRef(null); // soft shadow that orbits in sync with it
-    const ambientParallaxRef = useRef(null); // cursor-drift wrapper around the shadow+group above
+    const postHudRef = useRef(null); // separate popup near the + button, holds only the "post" link — the orbiting options block is untouched by the + entirely
+    const [optionsOpen, setOptionsOpen] = useState(false);
+
+    const caseDiscRef = useRef(null);    // CaseDisc's imperative handle: { discRef, imgGroupRef, boostSpin }
+    const logoDiscRef = useRef(null);    // LogoDisc's imperative handle: { groupRef, boostSpin }
+    const optionsMenuRef = useRef(null); // OptionsMenu's imperative handle: { elRef }
 
     useEffect(() => {
-        const ambientGroup = ambientGroupRef.current;
-        const ambientShadow = ambientShadowRef.current;
         const hero = heroRef.current;
         const pinEl = pinRef.current;
-        if (!ambientGroup || !hero || !pinEl) return;
-        let idleSpin = null;
+        if (!hero || !pinEl) return;
 
         const ctx = gsap.context(() => {
-            // where the disc parks once it becomes the background watermark
-            const restX = () => window.innerWidth * 0.15;
-            const restY = () => -window.innerHeight * -0.08;
-
-            // tracks wherever the logo currently is (its live x/y/scale/opacity —
-            // whether that's mid-scroll-bloom or parked as the background
-            // watermark) and adds a small orbiting wobble driven by whatever
-            // rotationX/rotationY is currently spinning it, so the shadow reads
-            // as cast by that same tumble instead of sitting there inert.
-            const SHADOW_ORBIT_X = 26;
-            const SHADOW_ORBIT_Y = 16;
-            function syncShadowToSpin() {
-                if (!ambientShadow) return;
-                const rx = gsap.getProperty(ambientGroup, 'rotationX') * Math.PI / 180;
-                const ry = gsap.getProperty(ambientGroup, 'rotationY') * Math.PI / 180;
-                const baseX = gsap.getProperty(ambientGroup, 'x');
-                const baseY = gsap.getProperty(ambientGroup, 'y');
-                const baseScale = gsap.getProperty(ambientGroup, 'scale');
-                const baseOpacity = gsap.getProperty(ambientGroup, 'opacity');
-                gsap.set(ambientShadow, {
-                    x: baseX + Math.sin(ry) * SHADOW_ORBIT_X * baseScale,
-                    y: baseY + Math.sin(rx) * SHADOW_ORBIT_Y * baseScale,
-                    scale: baseScale * (0.85 + 0.15 * Math.cos(ry)),
-                    opacity: baseOpacity * (0.35 + 0.15 * Math.cos(rx)),
-                });
-            }
-
-            gsap.set(ambientGroup, { xPercent: -50, yPercent: -50, transformPerspective: 900 });
-            if (ambientShadow) gsap.set(ambientShadow, { xPercent: -50, yPercent: -50, opacity: 0.3 });
-
-            // ── typewriter loop for the options text — "tmp3o.com" types
-            // in, holds, untypes, then "what inspires u?" does the same,
-            // forever (repeat: -1). Runs regardless of the reduced-motion
-            // branches below since it's not part of the scroll-hijack
-            // experience — but it's still motion, so it's skipped in favor
-            // of static finished text when the user has that preference
-            // (an infinite loop is exactly the kind of thing reduced-motion
-            // is meant to opt out of). aria-label on the <a>/<Link>
-            // ancestors (in the JSX below) carries the real, complete text
-            // at all times, so screen readers announce "tmp3o.com" / "what
-            // inspires u?" once rather than replaying every type/untype
-            // cycle as textContent gets rewritten.
-            //
-            // Duration is per-character (not a fixed duration per line), so
-            // the longer title text still reads at the same typing *speed*
-            // as the shorter tmp3o.com line instead of visibly rushing to
-            // fit the same duration.
-            const CHAR_TYPE_DURATION = 0.18;   // seconds per character while typing
-            const CHAR_UNTYPE_DURATION = 0.245; // untyping reads better a little quicker
-            const HOLD_DURATION = 1.6;          // pause once a line is fully typed
-            const LINE_GAP = 0.35;              // pause on the empty state before the next line starts
-
-            function typeInto(el, text, charDuration) {
-                if (!el) return null;
-                const proxy = { chars: 0 };
-                return gsap.to(proxy, {
-                    chars: text.length,
-                    duration: text.length * charDuration,
-                    ease: 'none',
-                    onUpdate: () => { el.textContent = text.slice(0, Math.round(proxy.chars)); },
-                });
-            }
-            function untypeFrom(el, text, charDuration) {
-                if (!el) return null;
-                const proxy = { chars: text.length };
-                return gsap.to(proxy, {
-                    chars: 0,
-                    duration: text.length * charDuration,
-                    ease: 'none',
-                    onUpdate: () => { el.textContent = text.slice(0, Math.round(proxy.chars)); },
-                });
-            }
-
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                if (tmp3oTextRef.current) tmp3oTextRef.current.textContent = 'tmp3o.com';
-                if (titleTextRef.current) titleTextRef.current.textContent = '+archive.cd';
-            } else {
-                if (optionsRef.current) optionsRef.current.setAttribute('data-typing', '');
-                gsap.timeline({ repeat: -1, delay: 0.4 })
-                    .add(typeInto(tmp3oTextRef.current, 'tmp3o.com', CHAR_TYPE_DURATION))
-                    .to({}, { duration: HOLD_DURATION })
-                    .add(untypeFrom(tmp3oTextRef.current, 'tmp3o.com', CHAR_UNTYPE_DURATION))
-                    .to({}, { duration: LINE_GAP })
-                    .add(typeInto(titleTextRef.current, '+archive.cd', CHAR_TYPE_DURATION))
-                    .to({}, { duration: HOLD_DURATION })
-                    .add(untypeFrom(titleTextRef.current, '+archive.cd', CHAR_UNTYPE_DURATION))
-                    .to({}, { duration: LINE_GAP });
-            }
+            // centers .postHud on its top/right anchor point — set here,
+            // unconditionally (not inside the mm.add branch below), so
+            // it's correct even under reduced motion, where the open/close
+            // effect (further below) only ever touches opacity, never
+            // xPercent/yPercent.
+            if (postHudRef.current) gsap.set(postHudRef.current, { xPercent: -50, yPercent: -50 });
 
             const mm = gsap.matchMedia();
 
-            // ── reduced motion: no scroll hijack, just a slow XYZ tumble ──
-            mm.add('(prefers-reduced-motion: reduce)', () => {
-                gsap.set(ambientGroup, { opacity: 0.12, scale: 2.15, x: restX(), y: restY() });
-                idleSpin = gsap.to(ambientGroup, {
-                    rotationX: '-=360', rotationY: '-=360', rotationZ: '-=360',
-                    duration: 7, ease: 'none', repeat: -1,
-                    onUpdate: syncShadowToSpin,
-                });
-                return () => idleSpin && idleSpin.kill();
-            });
-
-            // ── full experience ──
+            // ── full experience — the pin/scroll-hijack, the mouse
+            // features, and the header handoff only ever exist under this
+            // branch, matching the original design: under reduced motion
+            // there's no scroll-triggered fly-apart at all, and each child
+            // component already falls back to its own static/slow-idle
+            // state on its own (see CaseDisc/LogoDisc/OptionsMenu), so
+            // Hero itself has nothing left to do in a 'reduce' branch.
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(caseWrapRef.current, { transformPerspective: 900 });
-                gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
-                gsap.set(ambientGroup, {
-                    opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
-                });
 
-                // the case's own idle tumble — runs the whole time, independent of
-                // the CSS bob on the wrapper divs. caseWrap/caseImgGroup spin freely
-                // on all three axes since the scroll timeline below never touches
-                // their rotation (only scale/z/opacity); discRef only gets rotationZ
-                // since the fly-off already owns its rotationX/rotationY.
-                const caseTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-                caseTumble
-                    .to(caseImgGroupRef.current, { rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360', duration: 240 }, 0)
-                    .to(discRef.current, { rotationZ: '+=360', duration: 360 }, 0);
-
-                // the ambient logo's own forever tumble — same idea as caseTumble:
-                // it spins continuously from mount, independent of scroll. The
-                // scroll timeline below only ever touches its scale/z/x/y/opacity
-                // (never rotation), so the two never fight over the same property.
-                const ambientTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' }, onUpdate: syncShadowToSpin });
-                ambientTumble
-                    .to(ambientGroup, { rotationX: '-=360', rotationY: '-=360', rotationZ: '+=360', duration: 70 }, 0);
-
-                // the options text block's own self-spin — X axis, i.e.
-                // perpendicular to the logo's own Y-axis rotation (a door
-                // swinging left-right vs. a flap swinging top-bottom).
-                // Perspective for this comes from caseWrapRef (already set
-                // above), since .options is a direct child of it. The
-                // scroll timeline further below only ever touches
-                // optionsRef's x/opacity (fading it out during the
-                // fly-apart), never rotation, so the two don't fight over
-                // the same property either. .options has no "back" layer
-                // the way the case/logo do, so .options itself gets
-                // backface-visibility: hidden in the CSS — it just fades
-                // out of view for the far half of each rotation instead of
-                // showing the text mirrored/backwards.
-                const optionsTumble = gsap.timeline({ repeat: -1, defaults: { ease: 'none' } });
-                optionsTumble
-                    .to(optionsRef.current, { rotationX: '+=360', duration: 24 }, 0);
-
-                // ── orbit — optionsOrbitRef (the outer wrapper, separate
-                // from optionsRef so this never fights the scroll timeline's
-                // x tween above) circles the ambient logo's actual live
-                // on-screen position every frame — not a fixed point, since
-                // the logo itself keeps moving (scroll-driven parking, mouse
-                // parallax). orbitAnchor is optionsOrbitRef's own natural
-                // resting position, captured once before any GSAP offset is
-                // applied, so the orbit target below can be expressed as a
-                // delta from it (an x/y translate), rather than fighting
-                // over the element's actual page position directly.
-                const ORBIT_RADIUS = 220;
-                const orbitAnchorRect = optionsOrbitRef.current.getBoundingClientRect();
-                const orbitAnchorCenterX = orbitAnchorRect.left + orbitAnchorRect.width / 2;
-                const orbitAnchorCenterY = orbitAnchorRect.top + orbitAnchorRect.height / 2;
-                const orbitProxy = { angle: 0 };
-                const optionsOrbit = gsap.to(orbitProxy, {
-                    angle: Math.PI * 2,
-                    duration: 18,
-                    repeat: -1,
-                    ease: 'none',
-                    onUpdate: () => {
-                        const logoRect = ambientGroup.getBoundingClientRect();
-                        const logoCenterX = logoRect.left + logoRect.width / 2;
-                        const logoCenterY = logoRect.top + logoRect.height / 2;
-                        gsap.set(optionsOrbitRef.current, {
-                            x: logoCenterX + Math.cos(orbitProxy.angle) * ORBIT_RADIUS - orbitAnchorCenterX,
-                            y: logoCenterY + Math.sin(orbitProxy.angle) * ORBIT_RADIUS * 0.45 - orbitAnchorCenterY,
-                        });
-                    },
-                });
-
-                // ── spin boosters — both perpetual tumbles (caseTumble,
-                // ambientTumble) can be sped up temporarily by whatever's
-                // currently driving them: scroll speed, or cursor speed while it
-                // sweeps over the element (both further below). Each timeline
-                // gets its own booster with its own independent decay-back-to-1
-                // timer, so the two input sources never need to coordinate —
-                // whichever fires most recently just nudges timeScale, and it
-                // eases back to 1x a beat after that source goes quiet.
-                function createSpinBooster(timeline) {
-                    let decayTimer = null;
-                    function boost(amount) {
-                        gsap.killTweensOf(timeline);
-                        timeline.timeScale(1 + amount);
-                        clearTimeout(decayTimer);
-                        decayTimer = setTimeout(() => {
-                            gsap.to(timeline, { timeScale: 1, duration: 1.2, ease: 'power2.out' });
-                        }, 120);
-                    }
-                    boost.cancel = () => clearTimeout(decayTimer);
-                    return boost;
-                }
-                const boostAmbientSpin = createSpinBooster(ambientTumble);
-                const boostCaseSpin = createSpinBooster(caseTumble);
-
-                // ── mouse parallax — the case and the ambient disc/logo drift
-                // gently toward the cursor, measured from true viewport center
-                // (0,0 dead-center, ±1 at the edges). Nothing moves until the
-                // page actually receives a mousemove — the scene sits exactly at
-                // its CSS-default centered position until then — but from the
-                // very first one, the offset reflects the cursor's real position
-                // relative to center, the same way any standard cursor-parallax
-                // effect works, rather than being calibrated off wherever the
-                // cursor happened to start.
-                //
-                // quickTo gives each mousemove a smooth, eased tween instead of
-                // snapping straight to the pointer, and it only ever touches x/y
-                // (translate) — never rotation/scale/opacity — so it can't fight
-                // caseTumble, ambientTumble, or the scroll timeline for the same
-                // property on the same element. The ambient logo gets its own
-                // wrapper (ambientParallaxRef) rather than being applied to
-                // ambientGroup directly, since ambientGroup's x/y are already
-                // driven by the scroll timeline (parking it as the background
-                // watermark) — a separate wrapper lets the two offsets add
-                // together in screen space instead of racing.
+                // ── mouse parallax — the case drifts gently toward the
+                // cursor, measured from true viewport center (0,0 dead-
+                // center, ±1 at the edges). Nothing moves until the page
+                // actually receives a mousemove — the scene sits exactly
+                // at its CSS-default centered position until then — but
+                // from the very first one, the offset reflects the
+                // cursor's real position relative to center, the same way
+                // any standard cursor-parallax effect works, rather than
+                // being calibrated off wherever the cursor happened to
+                // start. (LogoDisc/CaseDisc's own tumbles handle
+                // themselves; this is specifically caseWrapRef, which
+                // stays Hero-owned since .caseWrap also lays out
+                // OptionsMenu/SideImage/CaseDisc as a row.) quickTo only
+                // ever touches x/y (translate) — never rotation/scale/
+                // opacity — so it can't fight CaseDisc's own tumble or the
+                // scroll timeline below for the same property.
                 const PARALLAX_EASE = 'power2.out';
-                const CASE_PARALLAX_DURATION = 0.9;    // foreground case — heavier, slower to catch up
-                const AMBIENT_PARALLAX_DURATION = 0.6; // background watermark — a touch snappier
-                const PARALLAX_RANGE = 8;             // px of max drift at full cursor travel from center — shared by both
-
+                const CASE_PARALLAX_DURATION = 0.9;
+                const PARALLAX_RANGE = 8;
                 const caseParallaxX = gsap.quickTo(caseWrapRef.current, 'x', { duration: CASE_PARALLAX_DURATION, ease: PARALLAX_EASE });
                 const caseParallaxY = gsap.quickTo(caseWrapRef.current, 'y', { duration: CASE_PARALLAX_DURATION, ease: PARALLAX_EASE });
-                const ambientParallaxX = gsap.quickTo(ambientParallaxRef.current, 'x', { duration: AMBIENT_PARALLAX_DURATION, ease: PARALLAX_EASE });
-                const ambientParallaxY = gsap.quickTo(ambientParallaxRef.current, 'y', { duration: AMBIENT_PARALLAX_DURATION, ease: PARALLAX_EASE });
 
-                // ── mouse-speed spin — sweeping the cursor across the case or
-                // the ambient logo spins that element's own tumble faster,
-                // scaled to how fast the cursor is actually moving at that
-                // instant (not merely "is it hovering"). Hit-tested by hand via
-                // getBoundingClientRect rather than native pointerenter/leave on
-                // the elements themselves, because .ambientGroup/.ambient/
-                // .ambientFloat are deliberately pointer-events: none (so the
-                // fixed, page-spanning watermark logo never blocks clicks on
-                // real content once it's parked there) — an element with
-                // pointer-events: none can never be a hover/pointer target, so
-                // native hover events would simply never fire on it. A plain
-                // global mousemove + rect math isn't blocked by that, and works
-                // identically for the case (which carries no such restriction).
+                // ── mouse-speed spin — sweeping the cursor across the
+                // case or the ambient logo spins that element's own
+                // tumble faster, scaled to how fast the cursor is
+                // actually moving at that instant (not merely "is it
+                // hovering"). This is the one piece that can't live
+                // inside either child component individually: it needs to
+                // hit-test against BOTH of them (via the raw element refs
+                // each exposes) to decide which one(s) to boost, then
+                // calls each one's own boostSpin — it never touches
+                // either tumble directly. Hit-tested by hand via
+                // getBoundingClientRect rather than native pointerenter/
+                // leave on the elements themselves, because LogoDisc's
+                // .ambientGroup/.ambient/.ambientFloat are deliberately
+                // pointer-events: none (so the fixed, page-spanning
+                // watermark logo never blocks clicks on real content once
+                // it's parked there) — an element with pointer-events:
+                // none can never be a hover/pointer target, so native
+                // hover events would simply never fire on it. A plain
+                // global mousemove + rect math isn't blocked by that, and
+                // works identically for the case (which carries no such
+                // restriction).
                 const MOUSE_SPIN_SPEED_RANGE = 3000; // px/s of cursor travel that maps to max spin boost
                 let lastPointerX = null;
                 let lastPointerY = null;
@@ -292,8 +126,12 @@ export default function Hero() {
                             const speed = (dist / dt) * 1000; // px/s
                             const boost = gsap.utils.clamp(0, 6, speed / MOUSE_SPIN_SPEED_RANGE);
                             if (boost > 0) {
-                                if (isPointInRect(e.clientX, e.clientY, discRef.current)) boostCaseSpin(boost);
-                                if (isPointInRect(e.clientX, e.clientY, ambientGroupRef.current)) boostAmbientSpin(boost);
+                                if (isPointInRect(e.clientX, e.clientY, caseDiscRef.current?.discRef.current)) {
+                                    caseDiscRef.current.boostSpin(boost);
+                                }
+                                if (isPointInRect(e.clientX, e.clientY, logoDiscRef.current?.groupRef.current)) {
+                                    logoDiscRef.current.boostSpin(boost);
+                                }
                             }
                         }
                     }
@@ -307,34 +145,37 @@ export default function Hero() {
                     const offsetY = gsap.utils.clamp(-1, 1, (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2));
                     caseParallaxX(offsetX * PARALLAX_RANGE);
                     caseParallaxY(offsetY * PARALLAX_RANGE);
-                    ambientParallaxX(offsetX * PARALLAX_RANGE);
-                    ambientParallaxY(offsetY * PARALLAX_RANGE);
                     boostSpinFromMouseSpeed(e);
                 }
                 window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-                // makes scrolling itself visibly spin the disc faster — routes
-                // through the same booster mouse-speed uses above, so scroll and
-                // cursor speed never fight over ambientTumble's timeScale
-                // directly; they just both nudge the one shared booster.
+                // makes scrolling itself visibly spin the logo faster —
+                // routes through the same boostSpin LogoDisc exposes, so
+                // scroll and cursor speed never fight over its tumble's
+                // timeScale directly; they just both nudge the one
+                // booster LogoDisc owns internally.
                 function boostSpinFromScroll(velocity) {
-                    boostAmbientSpin(gsap.utils.clamp(0, 6, Math.abs(velocity) / 500));
+                    if (logoDiscRef.current) {
+                        logoDiscRef.current.boostSpin(gsap.utils.clamp(0, 6, Math.abs(velocity) / 500));
+                    }
                 }
 
-                // hands the reveal off to the Header once the disc's scroll
-                // animation is fully done — the ids are Header's own hooks for
-                // this (see the comment in App.jsx). #header-logo is deliberately
-                // NOT part of this handoff: it's a second, separate spinning disc
-                // (logo.jpeg, its own CSS spin) that duplicated the Hero's own
-                // tempo-logo watermark once revealed. The ambientGroup disc IS
-                // the one that's supposed to carry through into the page below —
-                // it's already position:fixed and keeps tumbling via ambientTumble
-                // the whole time, so it doesn't need a separate reveal at all.
-                // header-logo stays hidden at its default opacity: 0 (Header.jsx).
-                // "header-share" (the + button) used to be part of this group too,
-                // but it's now its own persistent, always-visible fixed button
-                // rendered in Hero itself (see .shareFab below) rather than
-                // something that waits for the pop-in reveal.
+                // hands the reveal off to the Header once the disc's
+                // scroll animation is fully done — the ids are Header's
+                // own hooks for this (see the comment in App.jsx).
+                // #header-logo is deliberately NOT part of this handoff:
+                // it's a second, separate spinning disc (logo.jpeg, its
+                // own CSS spin) that duplicated the Hero's own tempo-logo
+                // watermark once revealed. LogoDisc's own disc IS the one
+                // that's supposed to carry through into the page below —
+                // it's already position:fixed and keeps tumbling the
+                // whole time, so it doesn't need a separate reveal at
+                // all. header-logo stays hidden at its default opacity: 0
+                // (Header.jsx). "header-share" (the + button) used to be
+                // part of this group too, but it's now its own
+                // persistent, always-visible fixed button rendered in
+                // Hero itself (see .shareFab below) rather than something
+                // that waits for the pop-in reveal.
                 const headerPopEls = ['header-title', 'header-tmp3o']
                     .map((id) => document.getElementById(id))
                     .filter(Boolean);
@@ -354,128 +195,120 @@ export default function Hero() {
                     if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 0, scale: 0.85 });
                 }
 
-                // act timings, as fractions of the timeline below — named so act 1's
-                // length, act 2's start/length, and the total all stay obviously in
-                // sync instead of relying on magic numbers that happen to add up.
-                // ACT2_START/ACT2_DURATION are chosen so ACT2 finishes exactly at
-                // the timeline's own total duration: there's no extra runway of
-                // scroll after the disc lands where nothing is visibly changing
-                // (that dead stretch was the "have to scroll more to get it" gap).
+                // act timings, as fractions of the timeline below — named
+                // so act 1's length, act 2's start/length, and the total
+                // all stay obviously in sync instead of relying on magic
+                // numbers that happen to add up. ACT2_START/ACT2_DURATION
+                // are chosen so ACT2 finishes exactly at the timeline's
+                // own total duration: there's no extra runway of scroll
+                // after the disc lands where nothing is visibly changing
+                // (that dead stretch was the "have to scroll more to get
+                // it" gap).
                 const ACT1_DURATION = 0.05;
-                const ACT2_START = 0.0;       // small gap after ACT1, same as the original design
+                const ACT2_START = 0.0;
                 const ACT2_DURATION = 0.10;
-                const ACT2_END = ACT2_START + ACT2_DURATION; // = 0.10, the timeline's total duration
+                const ACT2_END = ACT2_START + ACT2_DURATION;
 
                 const tl = gsap.timeline({
                     defaults: { ease: 'none' },
                     scrollTrigger: {
                         trigger: hero,
                         start: 'top top',
-                        // ScrollTrigger always maps scroll progress 0→1 onto the
-                        // timeline's own duration (ACT2_END, 0.10) no matter what
-                        // physical distance is set here — so bigger number here =
-                        // less visual change per pixel scrolled = slower, more
-                        // gradual feel; smaller = faster/snappier. Was 0.15 (tuned
-                        // to fix a "too much scroll before the header shows" gap),
-                        // but that also meant the whole intro — the case flying
-                        // apart included — completed within a very short, easy-to-
-                        // miss nudge of scrolling. Raised to 0.5 so there's enough
-                        // scroll room to actually see the fly-apart happen, not
-                        // just glimpse it.
+                        // ScrollTrigger always maps scroll progress 0→1
+                        // onto the timeline's own duration (ACT2_END) no
+                        // matter what physical distance is set here — so
+                        // bigger number here = less visual change per
+                        // pixel scrolled = slower, more gradual feel;
+                        // smaller = faster/snappier.
                         end: () => '+=' + Math.round(window.innerHeight * 0.5),
-                        // pin an inner element (not the <section> React owns) so the
-                        // pin-spacer wrapper never fights React on unmount
+                        // pin an inner element (not the <section> React
+                        // owns) so the pin-spacer wrapper never fights
+                        // React on unmount
                         pin: pinEl,
                         pinSpacing: true,
                         scrub: 0.3,
                         invalidateOnRefresh: true,
-                        // once the user stops scrolling mid-transition, ease the
-                        // rest of the way to whichever end (hero or page) is closer
+                        // once the user stops scrolling mid-transition,
+                        // ease the rest of the way to whichever end (hero
+                        // or page) is closer
                         snap: {
                             snapTo: [0, 1],
                             duration: { min: 0.1, max: 0.3 },
                             ease: 'power1.inOut',
                         },
-                        // ties the disc's spin rate to how fast you're scrolling
+                        // ties the disc's spin rate to how fast you're
+                        // scrolling
                         onUpdate: (self) => boostSpinFromScroll(self.getVelocity()),
                     },
                 });
 
+                const caseImgGroupEl = caseDiscRef.current.imgGroupRef.current;
+                const discEl = caseDiscRef.current.discRef.current;
+                const optionsEl = optionsMenuRef.current.elRef.current;
+                const logoEl = logoDiscRef.current.groupRef.current;
+
                 tl
-                    // act 1 — the case opens and drops away in 3D. Opacity is
-                    // faded ONLY here, on the outermost wrapper — caseImgGroupRef
-                    // and discRef are both descendants of caseWrapRef, and nested
-                    // opacities multiply. All three used to fade 1→0 independently
-                    // over the same span, so the combined visible opacity crashed
-                    // to near-zero roughly like (1-p)³ instead of a plain (1-p) —
-                    // way faster than intended. The discCaseBack duplicate (the
-                    // darker "shadow" layer, already dimmed by its own brightness
-                    // filter) dropped below visibility first, reading as if it
-                    // disappeared on its own while the brighter front layer was
-                    // still faintly there. Fading opacity once at this level fades
-                    // the whole case — front and back layers together — at the
-                    // same visible rate, so the shadow layer stays through the
+                    // act 1 — the case opens and drops away in 3D. Opacity
+                    // is faded ONLY here, on the outermost wrapper —
+                    // caseImgGroupEl and discEl are both descendants of
+                    // caseWrapRef, and nested opacities multiply. Fading
+                    // opacity once at this level fades the whole case —
+                    // front and back layers together — at the same
+                    // visible rate, so the shadow layer stays through the
                     // full fly-apart instead of vanishing early.
                     .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0, duration: ACT1_DURATION }, 0)
-                    .to(caseImgGroupRef.current, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
-                    // scale/z toned down (was 1.35/240 — ballooned into an
-                    // unrecognizable close-up under perspective).
-                    .to(discRef.current, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
-                    .to(optionsRef.current, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
+                    .to(caseImgGroupEl, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
+                    .to(discEl, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
+                    .to(optionsEl, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
-                    // the ambient logo now gets the SAME fly-out-and-fade treatment
-                    // as the case above (was just a subtle z drift) — shrinks,
-                    // recedes, and fades to nothing right alongside it. Act 2 below
-                    // then has to bring it back from that vanished state (scale 0.4,
-                    // opacity 0, z -380) to parked-watermark (scale 1.2, opacity
-                    // 0.16, z 60) — a full re-emergence, not a small continuation,
-                    // which is exactly the "coming forward out of the depths"
-                    // counterpart the comment on that tween already describes.
-                    // Rotation is still deliberately left alone — ambientTumble
-                    // already owns rotationX/Y/Z on this element continuously (see
-                    // above); adding more rotation here would fight it for the same
-                    // properties.
-                    .to(ambientGroup, { scale: 0.4, opacity: 0, z: -380, duration: ACT1_DURATION }, 0)
-                    // act 2 — the ambient logo eases into its parked position. Its
-                    // onComplete/onReverseComplete — not the ScrollTrigger's own
-                    // onLeave/onEnterBack — are what reveal/hide the header's
-                    // tmp3o.com + WHAT INSPIRES U. onLeave fires off the *raw*
-                    // scroll position, which (with scrub smoothing lag) can land
-                    // well before or after this tween has actually finished
-                    // animating; tying the reveal to this tween's own completion
-                    // means the header always pops in at the exact moment the disc
-                    // visually finishes arriving, never before or after.
-                    // scale capped at 1.5 (was 2.15) — big enough to read as parked
-                    // in the background, not so big it blows past legibility.
-                    // z here continues smoothly from the -180 the tween above left
-                    // it at, and animates back toward the viewer (60, past its
-                    // resting z:0) — the "coming forward" counterpart to the case
-                    // flying away: the case recedes into the depth, the logo arrives
-                    // out of it. Plain .to() (no explicit "from"), so there's no
-                    // jump — it just continues from wherever act 1's tween left z.
-                    .to(ambientGroup, {
+                    // the ambient logo gets the same fly-out-and-fade
+                    // treatment as the case above — shrinks, recedes, and
+                    // fades to nothing right alongside it. Act 2 below
+                    // then brings it back from that vanished state to
+                    // parked-watermark — a full re-emergence, the "coming
+                    // forward out of the depths" counterpart to the case
+                    // flying away. Rotation is deliberately left alone —
+                    // LogoDisc's own tumble already owns rotationX/Y/Z on
+                    // this element continuously; adding more rotation
+                    // here would fight it for the same properties.
+                    .to(logoEl, { scale: 0.4, opacity: 0, z: -380, duration: ACT1_DURATION }, 0)
+                    // act 2 — the ambient logo eases into its parked
+                    // position. Its onComplete/onReverseComplete — not
+                    // ScrollTrigger's own onLeave/onEnterBack — are what
+                    // reveal/hide the header's tmp3o.com + WHAT INSPIRES
+                    // U. onLeave fires off the *raw* scroll position,
+                    // which (with scrub smoothing lag) can land well
+                    // before or after this tween has actually finished
+                    // animating; tying the reveal to this tween's own
+                    // completion means the header always pops in at the
+                    // exact moment the disc visually finishes arriving.
+                    // z here continues smoothly from the -380 the tween
+                    // above left it at, and animates back toward the
+                    // viewer (60, past its resting z: 0) — the "coming
+                    // forward" counterpart to the case flying away: the
+                    // case recedes into the depth, the logo arrives out
+                    // of it. Plain .to() (no explicit "from"), so there's
+                    // no jump — it just continues from wherever act 1's
+                    // tween left z.
+                    .to(logoEl, {
                         scale: 1.2, x: restX, y: restY, opacity: 0.16, z: 60, duration: ACT2_DURATION,
                         onComplete: popInHeader,
                         onReverseComplete: hideHeaderAgain,
                     }, ACT2_START);
 
-                // sanity check for future edits to the constants above — if ACT2
-                // no longer ends at the timeline's own duration, a dead scroll
-                // stretch (or a premature reveal) creeps back in.
+                // sanity check for future edits to the constants above —
+                // if ACT2 no longer ends at the timeline's own duration, a
+                // dead scroll stretch (or a premature reveal) creeps back
+                // in.
                 if (Math.abs(tl.duration() - ACT2_END) > 0.001) {
                     console.warn('Hero: ambient landing no longer matches the timeline\'s end — header reveal may drift out of sync with scroll again.');
                 }
 
                 return () => {
-                    boostAmbientSpin.cancel();
-                    boostCaseSpin.cancel();
                     window.removeEventListener('mousemove', handleMouseMove);
-                    caseTumble.kill();
-                    ambientTumble.kill();
-                    optionsTumble.kill();
-                    optionsOrbit.kill();
-                    // don't leave the Header's own elements stuck invisible if
-                    // Hero unmounts (e.g. navigating away) before the handoff fired
+                    // don't leave the Header's own elements stuck
+                    // invisible if Hero unmounts (e.g. navigating away)
+                    // before the handoff fired
                     if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 1, scale: 1 });
                 };
             });
@@ -490,140 +323,103 @@ export default function Hero() {
         };
     }, []);
 
+    // ── + toggle — pressing the + reveals postHudRef only: a standalone
+    // popup next to the + button holding just the "post" link, its own
+    // separate HUD. The orbiting/rotating options block (OptionsMenu) is a
+    // completely different, always-visible thing — the + doesn't touch it
+    // at all, on purpose (it shouldn't hide/show along with a button
+    // toggle it has nothing to do with). Kept as its own effect, separate
+    // from the big intro effect above, since it just reacts to
+    // optionsOpen rather than running once on mount. postHudRef stays
+    // mounted the whole time (never conditionally rendered) so GSAP can
+    // animate it in and out smoothly instead of popping abruptly;
+    // pointer-events/aria-hidden track the open state so it's not
+    // clickable or announced while closed.
+    useEffect(() => {
+        if (!postHudRef.current) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            gsap.set(postHudRef.current, { opacity: optionsOpen ? 1 : 0 });
+            return;
+        }
+        if (optionsOpen) {
+            gsap.to(postHudRef.current, {
+                opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.7)',
+            });
+        } else {
+            gsap.to(postHudRef.current, {
+                opacity: 0, y: -10, scale: 0.9, duration: 0.25, ease: 'power2.in',
+            });
+        }
+    }, [optionsOpen]);
+
     return (
         <>
-            {/* + share/create button — moved here from Header, now a
-                persistent, always-visible floating button (position: fixed
-                in Hero.module.css) rather than something that only appears
-                after the intro's pop-in reveal. Sits outside .pinInner/the
-                pinned scroll hierarchy entirely, so no ancestor transform
-                or opacity tween can affect it. */}
-
-            {/* Footer — moved here from App.jsx, wrapped so it can be
-                pinned to the bottom of the screen (position: fixed, see
-                .fixedFooter in Hero.module.css) and stay visible through
-                scrolling instead of only appearing once you reach the very
-                bottom of the page. Sits outside .pinInner/the pinned
-                scroll hierarchy, same reasoning as the + button above. */}
+            {/* Footer — pinned to the bottom of the screen (position:
+                fixed, see .fixedFooter in Hero.module.css) and stays
+                visible through scrolling instead of only appearing once
+                you reach the very bottom of the page. Sits outside
+                .pinInner/the pinned scroll hierarchy so nothing in that
+                hierarchy's own opacity/transform tweens can affect it. */}
             <div className={styles.fixedFooter}>
                 <Footer />
             </div>
 
             <section className={styles.hero} id="hero" ref={heroRef}>
                 <div className={styles.pinInner} ref={pinRef}>
+                    {/* .pinInner's own background is a flat opaque color
+                        (by design — see its comment above), which would
+                        otherwise completely hide the site-wide ambient
+                        layer behind this pinned, full-viewport section.
+                        Rendered again here, in front of that flat color but
+                        behind the real content, riding the isolation:
+                        isolate stacking context .pinInner already sets up
+                        for exactly this. */}
+                    <AmbientBackground />
 
                     <div className={styles.floatCase}>
-                        <Link to="/new" className={styles.shareFab} aria-label="create a post">
+                        {/* no longer navigates directly — pressing it
+                            toggles postHudRef, its own separate popup
+                            right here next to the button, open/closed.
+                            Doesn't touch OptionsMenu at all. data-open
+                            drives the +/× rotation in CSS. */}
+                        <button
+                            type="button"
+                            className={styles.shareFab}
+                            onClick={() => setOptionsOpen((open) => !open)}
+                            aria-expanded={optionsOpen}
+                            aria-label={optionsOpen ? 'close create post' : 'create a post'}
+                            data-open={optionsOpen || undefined}
+                        >
                             +
+                        </button>
+
+                        {/* separate HUD, deliberately not nested inside
+                            OptionsMenu — just the "post" link, popping out
+                            right next to the + button. Stays mounted the
+                            whole time so GSAP can animate it in/out
+                            smoothly; pointer-events/aria-hidden track
+                            optionsOpen so it's inert while closed. */}
+                        <Link
+                            to="/new"
+                            className={`${styles.opt} ${styles.postHud}`}
+                            ref={postHudRef}
+                            style={{ pointerEvents: optionsOpen ? 'auto' : 'none' }}
+                            aria-hidden={!optionsOpen}
+                            tabIndex={optionsOpen ? 0 : -1}
+                        >
+                            post
                         </Link>
 
                         <div className={styles.caseWrap} ref={caseWrapRef}>
-
-                            {/* options — left side. Text is typed in on mount (see
-                        the typewriter effect near the top of the effect
-                        above) — aria-label carries the real, complete text
-                        so screen readers get it immediately rather than the
-                        animated fragments. Split into two levels:
-                        optionsOrbitRef (outer) orbits the ambient logo's live
-                        position, optionsRef (inner) handles its own self-spin
-                        plus the scroll-driven fade/slide — kept separate so
-                        the orbit's x/y translate never fights the scroll
-                        timeline's own x tween on optionsRef. */}
-                            <div className={styles.optionsOrbit} ref={optionsOrbitRef}>
-                                <div className={styles.options} ref={optionsRef}>
-                                    <a
-                                        href="https://tmp3o.com/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={styles.topbarLink}
-                                        aria-label="tmp3o.com"
-                                        ref={tmp3oTextRef}
-                                    />
-
-                                    <Link to="/" className={styles.titleLink} aria-label="what inspires u?">
-                                        <h1 className={styles.title}>
-                                            <span ref={titleTextRef} /><span className={styles.typingCursor} aria-hidden="true" />
-                                        </h1>
-                                    </Link>
-                                </div>
-                            </div>
-
-                            {/* side image — its own self-contained component now
-                        (SideImage.jsx), right side, mirroring .options on
-                        the left (also balances the composition, since
-                        options alone had nothing on the right side to weigh
-                        against it). */}
-
-                            {/* cd case body */}
-                            <div className={styles.caseBody}>
-                                <div className={styles.floatDisc}>
-                                    <div className={styles.discSlot}>
-                                        <div className={styles.disc} ref={discRef}>
-                                            {/* cd spine */}
-                                            <div className={styles.spine}>
-                                                <span className={styles.spineText}></span>
-                                            </div>
-                                            {/* front + back layers give the case real Z-depth
-                                      instead of a flat drop-shadow, so it holds up
-                                      as it tumbles in 3D — see .discCaseGroup */}
-                                            <div className={styles.discCaseGroup} ref={caseImgGroupRef}>
-                                                <img
-                                                    src="/cd1.png"
-                                                    className={styles.discCase}
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                />
-                                                <img
-                                                    src="/cd1.png"
-                                                    className={`${styles.discCase} ${styles.discCaseBack}`}
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* soft ps3-style contact shadow, pulses with .floatDisc */}
-                                <div className={styles.caseShadow} />
-                            </div>
-
+                            <OptionsMenu ref={optionsMenuRef} logoRef={logoDiscRef} />
+                            <SideImage />
+                            <CaseDisc ref={caseDiscRef} />
                         </div>
                     </div>
-
                 </div>
             </section>
 
-            {/* the disc: sits in the case during the intro, then keeps spinning
-                behind the page as a faint watermark. Fixed positioning lives on
-                the wrapper so it can bob independently of GSAP's transforms
-                on the group below. */}
-            <div className={styles.ambientFloat}>
-                {/* cursor-drift wrapper — see the mouse parallax block in the
-                    effect above. Kept separate from .ambientGroup so this
-                    translate and the scroll timeline's own x/y on the group
-                    add together instead of fighting over the same property. */}
-                <div className={styles.ambientParallax} ref={ambientParallaxRef}>
-                    {/* orbits in sync with the logo's own spin — see ambientTumble's
-                        onUpdate in the effect above */}
-                    <div className={styles.ambientShadow} ref={ambientShadowRef} />
-                    {/* front + back layers, same real-depth approach as the case's
-                        discCaseGroup — see .ambientGroup */}
-                    <div className={styles.ambientGroup} ref={ambientGroupRef}>
-                        <img
-                            src="/tempoLogo.png"
-                            className={styles.ambient}
-                            alt=""
-                            aria-hidden="true"
-                        />
-                        <img
-                            src="/tempoLogo.png"
-                            className={`${styles.ambient} ${styles.ambientBack}`}
-                            alt=""
-                            aria-hidden="true"
-                        />
-                    </div>
-                </div>
-            </div>
+            <LogoDisc ref={logoDiscRef} />
         </>
     );
 }
