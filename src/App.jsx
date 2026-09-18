@@ -6,6 +6,7 @@ import { PostsProvider } from './context/PostsContext'
 import Header from './components/Header/Header'
 import Hero from './components/Hero/Hero'
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary'
+import AmbientBackground from './components/AmbientBackground/AmbientBackground'
 
 // App sets up routing and provides the PostsProvider for local state
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
   return (
     <PostsProvider>
       <div className="app">
+        <AmbientBackground />
         {isHome && (
           <ErrorBoundary>
             <Hero />
