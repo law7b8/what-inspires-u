@@ -1,0 +1,35 @@
+/* bottom-right, just above the fixed footer strip */
+.switcher {
+  position: fixed;
+  right: 16px;
+  bottom: 56px;
+  z-index: 3000;
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.25);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 0 0.5px rgba(128, 128, 128, 0.5);
+}
+
+.chip {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--wiy-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: rgba(128, 128, 128, 0.3);
+}
+
+.on {
+  background: var(--wiy-ink);
+  color: var(--wiy-bg);
+}

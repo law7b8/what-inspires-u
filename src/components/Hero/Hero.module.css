@@ -31,12 +31,12 @@
      future paints behind every real child without needing z-index tuning
      on any of them. */
   isolation: isolate;
-  /* plain solid color, no gradient — opaque so the pinned intro doesn't
-     show the Header/page bleeding through underneath while scrolling.
-     Matches the site's own background (body { background-color: #f7f4ef }
-     in global.css) rather than an arbitrary color, so the Hero doesn't
-     visibly clash with the page it hands off to. */
-  background: #f7f4ef;
+  /* transparent on purpose: the site-wide PS3Background canvas (App.jsx,
+     fixed, z-index 0) has to show through the hero. The page colour under it
+     is still the theme's own --wiy-bg, via .app/body, so nothing bleeds
+     through — pinSpacing keeps the page content below the pinned hero, never
+     under it. */
+  background: transparent;
 }
 
 /* ─── case wrapper ───────────────────────────────────────── */

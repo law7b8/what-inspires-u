@@ -8,7 +8,6 @@ import PlusMenu from './PlusMenu';
 import FloatingFiles from './FloatingFiles';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
-import AmbientBackground from '../AmbientBackground/AmbientBackground';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -338,15 +337,6 @@ export default function Hero() {
 
             <section className={styles.hero} id="hero" ref={heroRef}>
                 <div className={styles.pinInner} ref={pinRef}>
-                    {/* .pinInner's own background is a flat opaque color
-                        (by design — see its comment above), which would
-                        otherwise completely hide the site-wide ambient
-                        layer behind this pinned, full-viewport section.
-                        Rendered again here, in front of that flat color but
-                        behind the real content, riding the isolation:
-                        isolate stacking context .pinInner already sets up
-                        for exactly this. */}
-                    <AmbientBackground />
 
                     {/* + toggle, its cascading options down the left side,
                         and the post-img fill-out sheet — all self-contained

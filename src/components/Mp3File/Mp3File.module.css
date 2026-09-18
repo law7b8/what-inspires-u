@@ -87,7 +87,7 @@
   line-height: 1.25;
   text-align: center;
   color: #ffffff;
-  background: #0a60ff;
+  background: var(--wiy-accent-solid, #0a60ff);
   border-radius: 4px;
   overflow: hidden;
   display: -webkit-box;

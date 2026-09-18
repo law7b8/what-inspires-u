@@ -16,7 +16,7 @@
 
 .comment {
     padding: 0.75rem;
-    background-color: #e2e2e2;
+    background-color: var(--wiy-surface-alt);
     border-radius: 0.375rem;
 }
 
@@ -26,5 +26,5 @@
 
 .comment-time {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--wiy-ink-soft);
 }

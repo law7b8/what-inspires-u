@@ -11,7 +11,7 @@
 
 .post-page-meta {
     font-size: 0.875rem;
-    color: #666;
+    color: var(--wiy-ink-soft);
     margin-bottom: 1rem;
 }
 
@@ -43,7 +43,7 @@
 
 .post-page-meta {
     font-size: 0.875rem;
-    color: #666;
+    color: var(--wiy-ink-soft);
     margin-bottom: 1rem;
 }
 

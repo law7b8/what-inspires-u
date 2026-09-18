@@ -1,6 +1,6 @@
-/* ─── + options menu — macOS structure, PS3 XMB feel ──────────
-   Rounded glass surfaces and Mac-style windows (traffic lights, titlebar),
-   dressed like the PlayStation 3's XrossMediaBar: smoked dark glass, thin
+/* ─── + options menu — clean glass, PS3 XMB feel ──────────────
+   A big + in a frosted box, light glass option pills, and transparent frosted sheets
+   (a name + one close button up top), dressed like the PlayStation 3's XrossMediaBar: smoked dark glass, thin
    white type, and a soft blue-white glow on the selected item, which also
    swells slightly like an XMB icon. Every look-and-feel knob lives in the
    block below — change a value here and the toggle, the options and the
@@ -9,46 +9,49 @@
 .menu {
   /* shared */
   --mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
-  --xmb-glow: 160, 200, 255;                    /* rgb of the glow */
-  --xmb-text: #ffffff;
-  --xmb-text-dim: rgba(255, 255, 255, 0.72);
-  --mac-glass: rgba(18, 22, 32, 0.52);          /* smoked glass */
+  --xmb-glow: var(--wiy-glow, 160, 200, 255);   /* rgb of the glow — set per theme in tokens.css */
+  --xmb-text: var(--wiy-menu-text, #ffffff);
+  --xmb-text-dim: rgba(255, 255, 255, 0.82);
+  --mac-glass: var(--wiy-glass, rgba(18, 22, 32, 0.52)); /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 
+  /* ONE height for the + box and every option pill, so they always match */
+  --menu-item-height: 40px;
+
   /* options */
   --opt-font: var(--mac-font);
-  --opt-font-size: 13px;
+  --opt-font-size: 14px;
   --opt-letter-spacing: 0.06em;
   --opt-color: var(--xmb-text);
   --opt-bg: var(--mac-glass);
-  --opt-hover-color: #ffffff;
+  --opt-hover-color: var(--wiy-menu-text-hover, #ffffff);
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
-  --opt-radius: 10px;
-  --opt-pad-y: 8px;
-  --opt-pad-x: 24px;
-  --opt-shadow: var(--mac-hairline), var(--mac-shadow);
-  --opt-gap: 10px;          /* vertical space between options */
-  --opt-select-scale: 1.06; /* how much the selected option swells */
+  --opt-radius: 6px;
+  --opt-pad-x: 12px; /* auto = same width for all options, based on the widest one */
+  --opt-shadow: var(--mac-hairline);                     /* no drop shadow — cleaner */
+  --opt-gap: 12px;          /* vertical space between options */
+  --opt-select-scale: 1.1; /* how much the selected option swells */
   --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
 
   /* + toggle */
-  --toggle-size: 44px;
-  --toggle-font-size: 30px;
+  --toggle-size: var(--menu-item-height); /* a square, as tall as the option pills */
+  --toggle-font-size: 38px;
   --toggle-color: var(--xmb-text);
   --toggle-bg: var(--mac-glass);
-  --toggle-radius: 50%;     /* 12px for a squircle-ish button */
+  --toggle-radius: 20px;    /* 50% makes it a circle */
   --toggle-shadow: var(--mac-hairline), var(--mac-shadow);
 
   /* fill-out sheet (a Mac window in XMB dress) */
   --sheet-width: 340px;
-  --sheet-gap: 10px;        /* space between the option and where the sheet emerges */
-  --sheet-radius: 12px;
-  --sheet-bg: rgba(16, 20, 30, 0.93);
-  --sheet-shadow: var(--mac-hairline), 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(var(--xmb-glow), 0.18);
-  --titlebar-height: 36px;
+  --sheet-gap: 20px;        /* space between the option and where the sheet emerges */
+  --sheet-radius: 8px;
+  --sheet-bg: var(--wiy-sheet-bg, rgba(16, 20, 30, 0.5)); /* see-through, blurred behind */
+  --sheet-blur: blur(24px) saturate(160%);
+  --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
+  --titlebar-height: 40px;
   --sheet-max-height: calc(84vh - 140px); /* keeps a sheet on screen; scrolls inside if the window is shorter */
 
   position: absolute;
@@ -62,7 +65,7 @@
   font-family: var(--mac-font);
 }
 
-/* ─── + toggle ───────────────────────────────────────────── */
+/* ─── + toggle — a big, crisp + in a transparent frosted box ─── */
 
 .toggle {
   width: var(--toggle-size);
@@ -72,10 +75,10 @@
   padding: 0;
   font-family: var(--opt-font);
   font-size: var(--toggle-font-size);
-  font-weight: 200;
+  font-weight: 300; /* thick enough to read against a busy background */
   line-height: 1;
   color: var(--toggle-color);
-  text-shadow: 0 0 8px rgba(var(--xmb-glow), 0.8);
+  text-shadow: 0 0 10px rgba(var(--xmb-glow), 0.6);
   background: var(--toggle-bg);
   -webkit-backdrop-filter: var(--mac-glass-blur);
   backdrop-filter: var(--mac-glass-blur);
@@ -83,29 +86,30 @@
   border-radius: var(--toggle-radius);
   box-shadow: var(--toggle-shadow);
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   animation: xmbBreathe 3.6s ease-in-out infinite;
 }
 
-/* idle "breathing" glow, like an XMB icon waiting to be picked */
+/* idle "breathing" glow on the box, like an XMB icon waiting to be picked */
 @keyframes xmbBreathe {
   0%, 100% { box-shadow: var(--toggle-shadow), 0 0 0 rgba(var(--xmb-glow), 0); }
-  50% { box-shadow: var(--toggle-shadow), 0 0 16px rgba(var(--xmb-glow), 0.55); }
+  50% { box-shadow: var(--toggle-shadow), 0 0 18px rgba(var(--xmb-glow), 0.5); }
 }
 
 .toggle:hover,
 .toggle[data-open] {
-  background: var(--opt-hover-bg), var(--mac-glass);
   animation: none;
-  box-shadow: var(--toggle-shadow), var(--opt-glow);
+  background: var(--opt-hover-bg), var(--toggle-bg);
+  box-shadow: var(--mac-hairline), var(--opt-glow);
+  transform: scale(1.05);
 }
 
 .toggle:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
-/* the glyph itself turns into a × — the button doesn't rotate, so its
-   shape stays put. aria-label carries the accessible name. */
+/* the glyph itself turns into a × — the button doesn't rotate.
+   aria-label carries the accessible name. */
 .toggle::before {
   content: '+';
   display: block;
@@ -119,7 +123,7 @@
 
 .toggle:focus-visible,
 .opt:focus-visible,
-.light:focus-visible {
+.close:focus-visible {
   outline: 2px solid rgba(var(--xmb-glow), 0.9);
   outline-offset: 2px;
 }
@@ -151,8 +155,11 @@
 }
 
 .opt {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  height: var(--menu-item-height);
   position: relative;
   z-index: 2; /* above the sheet, which starts tucked behind it */
   box-sizing: border-box;
@@ -166,7 +173,7 @@
   text-transform: lowercase;
   text-decoration: none;
   white-space: nowrap;
-  padding: var(--opt-pad-y) var(--opt-pad-x);
+  padding: 0 var(--opt-pad-x);
   background: var(--opt-bg);
   -webkit-backdrop-filter: var(--mac-glass-blur);
   backdrop-filter: var(--mac-glass-blur);
@@ -190,19 +197,21 @@
   transform: scale(0.97);
 }
 
-/* ─── sheet (a Mac window) ───────────────────────────────── */
+/* ─── sheet — transparent frosted glass, like the post cards ──── */
 
 /* a clip window that starts at the option's right edge: the sheet slides
    inside it from the left, so it appears to come out from behind the
-   option. Clipped on the left only — the other sides are opened up so the
-   sheet's shadow isn't cut off. (clip-path makes this a backdrop root, so
-   the sheet itself uses a near-opaque background instead of live blur.) */
+   option. overflow: hidden clips the left edge exactly; the padding on the
+   other three sides is room for the sheet's shadow. (Not clip-path, which
+   would make this a backdrop root and stop the sheet's own blur.) */
 .sheetWindow {
   position: absolute;
-  top: 0;
+  top: -40px;
   left: calc(100% + var(--sheet-gap));
   width: var(--sheet-width);
-  clip-path: inset(-60px -60px -60px 0);
+  padding: 40px 40px 40px 0;
+  box-sizing: content-box; /* the site is border-box globally; the padding must not eat the sheet's width */
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -213,59 +222,53 @@
   will-change: transform;
   overflow: hidden;
   background: var(--sheet-bg);
+  -webkit-backdrop-filter: var(--sheet-blur);
+  backdrop-filter: var(--sheet-blur);
   border-radius: var(--sheet-radius);
   box-shadow: var(--sheet-shadow);
   font-family: var(--mac-font);
   color: var(--xmb-text);
 }
 
+/* clean header: the option's name on the left, one close button on the right */
 .titlebar {
-  position: relative;
   height: var(--titlebar-height);
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  background: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  justify-content: space-between;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.lights {
-  display: flex;
-  gap: 8px;
-}
-
-.light {
-  width: 12px;
-  height: 12px;
-  padding: 0;
-  border: 0.5px solid rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  color: transparent;
-}
-
-.close { background: #ff5f57; cursor: pointer; }
-.minimize { background: #febc2e; }
-.zoom { background: #28c840; }
-
-/* × glyph shows on the red light while hovering the group, like the real thing */
-.lights:hover .close { color: rgba(0, 0, 0, 0.55); }
 
 .titleText {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   font-size: 13px;
   font-weight: 300;
   letter-spacing: 0.06em;
   text-transform: lowercase;
   color: var(--xmb-text);
   text-shadow: 0 0 6px rgba(var(--xmb-glow), 0.5);
-  pointer-events: none;
+}
+
+.close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--xmb-text-dim);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .sheetBody {
@@ -306,13 +309,13 @@
   font-size: 13px;
   color: var(--xmb-text);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 6px;
 }
 
 .sheetBody input::placeholder,
 .sheetBody textarea::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .sheetBody input:focus,
@@ -374,8 +377,7 @@
     left: 12px;
     top: 18%;
     --opt-pad-x: 18px;
-    --toggle-size: 40px;
-    --toggle-font-size: 28px;
+    --menu-item-height: 38px;
     --sheet-width: min(340px, calc(100vw - 150px));
   }
 }

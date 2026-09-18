@@ -8,13 +8,13 @@
 .searchBar input {
     padding: 0.5rem 0.75rem;
     border-radius: 0.375rem;
-    background-color: #d0d0d0;
-    border: 1px solid #444;
-    color: #f7f7f7;
+    background-color: var(--wiy-field-bg);
+    border: 1px solid var(--wiy-control-border);
+    color: var(--wiy-ink);
     font-size: 1rem;
 }
 
 .searchBar input:focus {
     outline: none;
-    border-color: #444;
+    border-color: var(--wiy-control-border);
 }

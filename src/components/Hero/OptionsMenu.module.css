@@ -9,7 +9,7 @@
    .ambientParallax vs. .ambientGroup). */
 .optionsOrbit {
   position: absolute;
-  left: -20em;
+  left: -90em;
   top: -10%;
   will-change: transform;
 }
@@ -48,7 +48,11 @@
   font-weight: 500;
   letter-spacing: -0.09em;
   line-height: 0.95;
-  color: #000000;
+  /* hardcoded white, not var(--wiy-ink) — --wiy-ink flips to dark navy
+     under the paper theme (it's the general body-text color), which would
+     make this unreadable against the dark PS3 wave background both themes
+     now share. This text stays white regardless of theme. */
+  color: #ffffff;
   text-transform: lowercase;
   white-space: nowrap;
   margin: 0;
@@ -60,7 +64,7 @@
   display: none;
   width: 4px;
   height: 0.9em;
-  background: #000000;
+  background: #ffffff;
   margin-left: 2px;
   vertical-align: -0.1em;
   animation: caretBlink 1s step-end infinite;
@@ -91,7 +95,7 @@
 /* ─── top bar ─────────────────────────────────────────── */
 
 .topbarLink {
-  color: #000000;
+  color: #ffffff;
   text-decoration: none;
   font-size: 70px;
   font-weight: 500;

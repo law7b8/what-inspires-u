@@ -85,7 +85,7 @@
   width: 450px;
   height: 450px;
   pointer-events: none;
-  mix-blend-mode: multiply;
+  mix-blend-mode: var(--wiy-logo-blend, multiply);
   will-change: transform, opacity;
   transform-style: preserve-3d;
 }

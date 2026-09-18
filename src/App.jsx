@@ -6,7 +6,19 @@ import { PostsProvider } from './context/PostsContext'
 import Header from './components/Header/Header'
 import Hero from './components/Hero/Hero'
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary'
-import AmbientBackground from './components/AmbientBackground/AmbientBackground'
+import PS3Background from './components/PS3Background/PS3Background'
+import ThemeSwitcher from './components/ThemeSwitcher/ThemeSwitcher'
+
+// Background settings — edit these to tune the PS3 waves. Only the ones listed
+// here are overridden; the rest use the defaults in PS3Background.jsx (see the
+// prop list at the top of that file for every option and its range).
+// The wave COLORS are not here: they're in src/styles/tokens.css (section F).
+const BACKGROUND = {
+  waveSpeed: 0.5,          // animation speed: 0.1 (slow) to 2.0 (fast)
+  opacity: 0.42,           // how strongly it shows over the page colour: 0 to 1
+  glowIntensity: 1.1,      // ribbon glow: 0 to 1.5
+  noise: 0                 // film-grain strength over the background: 0 (off) to 1
+}
 
 // App sets up routing and provides the PostsProvider for local state
 export default function App() {
@@ -17,7 +29,8 @@ export default function App() {
   return (
     <PostsProvider>
       <div className="app">
-        <AmbientBackground />
+        <PS3Background {...BACKGROUND} />
+        <ThemeSwitcher />
         {isHome && (
           <ErrorBoundary>
             <Hero />

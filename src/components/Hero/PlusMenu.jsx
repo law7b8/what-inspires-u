@@ -127,19 +127,15 @@ export default function PlusMenu({ onLaunchMp3 }) {
                                     data-sheet={opt.id}
                                 >
                                     <div className={styles.titlebar}>
-                                        <div className={styles.lights}>
-                                            <button
-                                                type="button"
-                                                className={`${styles.light} ${styles.close}`}
-                                                onClick={closeSheet}
-                                                aria-label={`close ${opt.label}`}
-                                            >
-                                                ×
-                                            </button>
-                                            <span className={`${styles.light} ${styles.minimize}`} aria-hidden="true" />
-                                            <span className={`${styles.light} ${styles.zoom}`} aria-hidden="true" />
-                                        </div>
                                         <span className={styles.titleText}>{opt.label}</span>
+                                        <button
+                                            type="button"
+                                            className={styles.close}
+                                            onClick={closeSheet}
+                                            aria-label={`close ${opt.label}`}
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                     <div className={styles.sheetBody}>
                                         {opt.id === 'post-img' && (

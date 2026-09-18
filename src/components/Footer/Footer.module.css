@@ -13,18 +13,18 @@
 .dividerRow {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    border-top: 1px solid #1a1714;
+    border-top: 1px solid var(--wiy-ink);
 }
 
 .dividerCell {
     padding: 8px 28px;
     font-size: 14px;
     letter-spacing: 0.1em;
-    color: #8a7f6e;
+    color: var(--wiy-ink-faint);
 }
 
 .dividerCell:not(:last-child) {
-    border-right: 1px solid #c8bfaf;
+    border-right: 1px solid var(--wiy-line);
 }
 
 .dividerCell:last-child {
