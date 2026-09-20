@@ -2,14 +2,13 @@
 
 /* .options is the plain layout/fade wrapper. Each line's own wrapper
    (.topbarOrbit / .titleOrbit) carries the off-screen anchor position and
-   gets its own independent x/y/rotationY set every frame in
-   OptionsMenu.jsx, orbiting the ambient logo's live on-screen position at
-   its own radius/speed/phase — kept as separate elements from the actual
+   gets its own independent x/y set every frame in OptionsMenu.jsx,
+   orbiting the ambient logo's live on-screen position at its own
+   radius/speed/phase — kept as separate elements from the actual
    link/text inside so that orbit translate never fights anything else,
    same "different element for different property" pattern used throughout
    this component set (e.g. LogoDisc's .ambientParallax vs. .ambientGroup).
-   backface-visibility: hidden keeps each line's text from reading
-   mirrored/backwards on the far half of its own spin. */
+   No self-spin on either line — they stay upright while they orbit. */
 .options {
   position: relative;
   display: flex;
@@ -23,8 +22,6 @@
   left: -90em;
   top: -10%;
   will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 /* ─── title ─────────────────────────────────────────────── */
@@ -46,7 +43,7 @@
      under the paper theme (it's the general body-text color), which would
      make this unreadable against the dark PS3 wave background both themes
      now share. This text stays white regardless of theme. */
-  color: #ffffff;
+  color: #1d1d1d;
   text-transform: lowercase;
   white-space: nowrap;
   margin: 0;
@@ -67,7 +64,6 @@
      was nearly invisible against the site's now mostly-white/airy page;
      this stays visible against light or dark backgrounds alike. */
   border-color: #ffffff;
-  background: rgba(0, 0, 0, 0.35);
 }
 
 /* blinking caret shown only while .options carries data-typing — see the
@@ -121,7 +117,6 @@
 
 .topbarLink[data-has-text] {
   border-color: #ffffff;
-  background: rgba(0, 0, 0, 0.35);
 }
 
 .topbarLink:hover {

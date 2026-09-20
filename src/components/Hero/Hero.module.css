@@ -4,27 +4,37 @@
   position: relative;
 }
 
-/* ─── title card image ───────────────────────────────────────
-   Top-left, above the + toggle — same fixed/"hovering" positioning
-   approach as PlusMenu's own .menu (position: absolute against .pinInner,
-   plain left/top, no scroll-timeline or orbit tracking involved).
-   z-index deliberately BELOW PlusMenu's .menu (2000) — they were the same
-   value before, which let this image (later in the DOM) paint on top of
-   and hide the + toggle wherever the two happened to overlap. */
-.titleCardImg {
+/* ─── title card group ───────────────────────────────────────
+   Top-left, fixed/"hovering" screen position (position: absolute against
+   .pinInner, plain left/top, no scroll-timeline or orbit tracking
+   involved). Deliberately no explicit width — a position: absolute block
+   with no width set shrinks to fit its content (the image), so this ends
+   up exactly as wide as titlecard.png actually renders, whatever that
+   turns out to be. PlusMenu is positioned against THIS element (see
+   .menu's own right: 0; top: 100% in PlusMenu.module.css), not against
+   .pinInner directly, so its right edge lines up with the image's right
+   edge exactly and it sits straight down, directly underneath it. */
+.titleCardGroup {
   position: absolute;
   left: 32px;
   top: 1%;
+  z-index: 1000;
+}
+
+.titleCardImg {
+  display: block;
   max-width: 220px;
   height: auto;
-  z-index: 1000;
   pointer-events: none;
 }
 
 @media (max-width: 768px) {
-  .titleCardImg {
+  .titleCardGroup {
     left: 12px;
     top: 8px;
+  }
+
+  .titleCardImg {
     max-width: 140px;
   }
 }

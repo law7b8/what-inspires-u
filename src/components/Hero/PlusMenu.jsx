@@ -171,7 +171,9 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
                 aria-controls="plus-menu-list"
                 aria-label={open ? 'close options' : 'open options'}
                 data-open={open || undefined}
-            />
+            >
+                <img src="/optionButton.png" alt="" className={styles.toggleImg} />
+            </button>
 
             <ul className={styles.list} id="plus-menu-list">
                 {OPTIONS.map((opt, i) => {

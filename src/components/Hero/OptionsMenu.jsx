@@ -4,16 +4,18 @@ import { gsap } from 'gsap';
 import styles from './OptionsMenu.module.css';
 
 // The tmp3o.com/title text block — types itself in on a loop; the two
-// lines each orbit the ambient logo's live on-screen position and spin
-// independently of each other (different radius/speed/phase/rotation
-// period per line), rather than moving as one rigid unit. Fully self-
-// contained (owns its refs, its typewriter loop, its own reduced-motion
-// handling, its own cleanup) except for one thing it can't own itself: it
-// needs to track a DIFFERENT component's (LogoDisc) live position every
-// frame for the orbit, so logoRef is passed in as a prop (LogoDisc's own
-// forwardRef handle) rather than something this component could discover
-// on its own.
-export default function OptionsMenu({ logoRef, firstText = 'tmp3o.com', secondText = '+archive.cd' }) {
+// lines each orbit a shared center point sitting between the ambient logo
+// and the CD case, independently of each other (different radius/speed/
+// phase per line), rather than moving as one rigid unit or circling just
+// one of the two objects. No self-spin on either line — they stay upright
+// while they orbit, not tumbling on their own axis. Fully self-contained
+// (owns its refs, its typewriter loop, its own reduced-motion handling,
+// its own cleanup) except for one thing it can't own itself: it needs to
+// track TWO different components' (LogoDisc, CaseDisc) live positions
+// every frame for the orbit, so logoRef/caseRef are passed in as props
+// (their own forwardRef handles) rather than something this component
+// could discover on its own.
+export default function OptionsMenu({ logoRef, caseRef, firstText = 'tmp3o.com', secondText = '+archive.cd' }) {
     const optionsRef = useRef(null);
     const topbarOrbitRef = useRef(null);
     const titleOrbitRef = useRef(null);
@@ -120,33 +122,40 @@ export default function OptionsMenu({ logoRef, firstText = 'tmp3o.com', secondTe
 
             let topbarOrbit = null;
             let titleOrbit = null;
-            let topbarSpin = null;
-            let titleSpin = null;
             if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 // deliberately stepped, not smooth — only actually writes
                 // the position/opacity below 24 times a second (a "film
                 // frame rate" look) instead of on every display-refresh
                 // tick GSAP's ticker would otherwise call onUpdate at
-                // (typically 60fps+). gsap.ticker.time is a shared,
-                // ever-increasing clock (not tied to either tween below),
-                // so both hold steady at 24fps regardless of how often
-                // onUpdate itself actually fires.
-                const ORBIT_FRAME_DURATION = 1 / 24;
+                // (typically 60fps+). performance.now() rather than GSAP's
+                // own ticker.time, so this is a plain, unambiguous
+                // wall-clock gate independent of any GSAP internals.
+                const ORBIT_FRAME_MS = 1000 / 24;
+                // extra clearance added on top of half the logo↔case
+                // distance when sizing the shared orbit radius — without
+                // this, a radius of EXACTLY half that distance would just
+                // graze both objects rather than clearing them.
+                const ORBIT_CLEARANCE = 180;
 
-                // each line orbits logoRef's actual live on-screen position
-                // every frame — not a fixed point, since the logo itself
-                // keeps moving (scroll-driven parking, its own mouse
-                // parallax) — with its OWN radius/speed/phase/left-offset,
-                // so the two lines genuinely move independently instead of
-                // as one rigid block. wrapperEl's own natural resting
-                // position (its anchor, from the off-screen `left: -90em`
-                // in the CSS) is captured once before any GSAP offset is
-                // applied, so the orbit target can be expressed as a delta
-                // from it (an x/y translate) rather than fighting over the
-                // element's actual page position directly — the anchor's
-                // exact coordinates don't matter, they cancel out of the
-                // math below either way.
-                function createOrbit(wrapperEl, { radius, radiusY, offsetX, duration, phase }) {
+                // each line orbits a shared center — the midpoint between
+                // the logo's and the case's actual live on-screen positions
+                // every frame (not a fixed point, since both keep moving:
+                // scroll-driven parking, mouse parallax, the case's own
+                // fly-apart) — at its OWN base radius/speed/phase/left-
+                // offset, so the two lines genuinely move independently
+                // instead of as one rigid block. The radius grows past its
+                // configured baseRadius whenever the logo and case are
+                // currently far enough apart that a fixed radius would cut
+                // through one of them, so the orbit always sweeps AROUND
+                // both rather than between them. wrapperEl's own natural
+                // resting position (its anchor, from the off-screen
+                // `left: -90em` in the CSS) is captured once before any
+                // GSAP offset is applied, so the orbit target can be
+                // expressed as a delta from it (an x/y translate) rather
+                // than fighting over the element's actual page position
+                // directly — the anchor's exact coordinates don't matter,
+                // they cancel out of the math below either way.
+                function createOrbit(wrapperEl, { baseRadius, radiusYRatio, offsetX, duration, phase }) {
                     if (!wrapperEl) return null;
                     const anchorRect = wrapperEl.getBoundingClientRect();
                     const anchorCenterX = anchorRect.left + anchorRect.width / 2;
@@ -159,16 +168,27 @@ export default function OptionsMenu({ logoRef, firstText = 'tmp3o.com', secondTe
                         repeat: -1,
                         ease: 'none',
                         onUpdate: () => {
-                            if (gsap.ticker.time < nextFrameAt) return;
-                            nextFrameAt = gsap.ticker.time + ORBIT_FRAME_DURATION;
+                            const now = performance.now();
+                            if (now < nextFrameAt) return;
+                            nextFrameAt = now + ORBIT_FRAME_MS;
                             const logoEl = logoRef?.current?.groupRef?.current;
-                            if (!logoEl) return;
+                            const caseEl = caseRef?.current?.discRef?.current;
+                            if (!logoEl || !caseEl) return;
                             const logoRect = logoEl.getBoundingClientRect();
+                            const caseRect = caseEl.getBoundingClientRect();
                             const logoCenterX = logoRect.left + logoRect.width / 2;
                             const logoCenterY = logoRect.top + logoRect.height / 2;
+                            const caseCenterX = caseRect.left + caseRect.width / 2;
+                            const caseCenterY = caseRect.top + caseRect.height / 2;
+
+                            const centerX = (logoCenterX + caseCenterX) / 2;
+                            const centerY = (logoCenterY + caseCenterY) / 2;
+                            const distance = Math.hypot(caseCenterX - logoCenterX, caseCenterY - logoCenterY);
+                            const radius = Math.max(baseRadius, distance / 2 + ORBIT_CLEARANCE);
+
                             gsap.set(wrapperEl, {
-                                x: logoCenterX + Math.cos(proxy.angle) * radius - anchorCenterX + offsetX,
-                                y: logoCenterY + Math.sin(proxy.angle) * radiusY - anchorCenterY,
+                                x: centerX + Math.cos(proxy.angle) * radius - anchorCenterX + offsetX,
+                                y: centerY + Math.sin(proxy.angle) * radius * radiusYRatio - anchorCenterY,
                                 // fades to nothing on the far side of this
                                 // line's own orbit and back to fully visible
                                 // on the near side — tied directly to this
@@ -180,35 +200,18 @@ export default function OptionsMenu({ logoRef, firstText = 'tmp3o.com', secondTe
                     });
                 }
 
-                // same wrapper elements the orbit above already moves —
-                // GSAP composes the x/y it sets there with the rotationY
-                // set here into one combined transform automatically, no
-                // conflict (they're different properties on the same
-                // element, not two tweens fighting over the same one).
-                // backface-visibility: hidden in the CSS keeps the text
-                // from reading mirrored/backwards on the far half of each
-                // spin.
-                function createSpin(el, seconds) {
-                    if (!el) return null;
-                    return gsap.to(el, { rotationY: '-=360', duration: seconds, repeat: -1, ease: 'none' });
-                }
-
                 topbarOrbit = createOrbit(topbarOrbitRef.current, {
-                    radius: 420, radiusY: 420 * 0.45, offsetX: -120, duration: 26, phase: 0,
+                    baseRadius: 420, radiusYRatio: 0.45, offsetX: -120, duration: 26, phase: 0,
                 });
                 titleOrbit = createOrbit(titleOrbitRef.current, {
-                    radius: 300, radiusY: 300 * 0.5, offsetX: -40, duration: 19, phase: Math.PI,
+                    baseRadius: 300, radiusYRatio: 0.5, offsetX: -40, duration: 19, phase: Math.PI,
                 });
-                topbarSpin = createSpin(topbarOrbitRef.current, 14);
-                titleSpin = createSpin(titleOrbitRef.current, 21);
             }
 
             return () => {
                 typeLoop && typeLoop.kill();
                 topbarOrbit && topbarOrbit.kill();
                 titleOrbit && titleOrbit.kill();
-                topbarSpin && topbarSpin.kill();
-                titleSpin && titleSpin.kill();
             };
         });
 

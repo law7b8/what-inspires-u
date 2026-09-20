@@ -5,8 +5,15 @@
    swells slightly like an XMB icon. Every look-and-feel knob lives in the
    block below — change a value here and the toggle, the options and the
    sheets all follow. Options come straight down from behind the toggle,
-   stacked in a column; each option's own sheet slides out to the right,
-   from behind that option specifically. */
+   stacked in a column, right-aligned with and directly underneath the
+   title card image (this renders inside .titleCardGroup in Hero.jsx —
+   see .menu's own right/top below); each option's own sheet slides out to
+   the right, from behind that option specifically. Nothing here rotates
+   except the toggle's own image on open/close (see .toggleImg) — the menu
+   itself used to carry a stray transform: rotatez(10deg) (left behind as
+   a "GPU acceleration" hack, but 10deg is a real visible tilt, not the
+   usual harmless translateZ(0) trick), which was rotating the options
+   right along with it. */
 .menu {
   /* shared — same font the rest of the site (and the /new post page's own
      forms) use, not a separate Apple-system stack, and one shared size
@@ -16,9 +23,9 @@
   --mac-font: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   --menu-font-size: 13px;
   --xmb-glow: var(--wiy-glow, 160, 200, 255);   /* rgb of the glow — set per theme in tokens.css */
-  --xmb-text: #000000;
+  --xmb-text: #ffffff;
   --xmb-text-dim: rgba(0, 0, 0, 0.7);
-  --mac-glass: var(--wiy-glass, rgba(18, 22, 32, 0.52)); /* smoked glass */
+  --mac-glass: var(--wiy-glass, rgb(253, 252, 252)); /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
@@ -43,12 +50,7 @@
   --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
 
   /* + toggle */
-  --toggle-size: var(--menu-item-height); /* a square, as tall as the option pills */
-  --toggle-font-size: 38px;
-  --toggle-color: var(--xmb-text);
-  --toggle-bg: var(--mac-glass);
-  --toggle-radius: 0px;
-  --toggle-shadow: var(--mac-hairline), var(--mac-shadow);
+  --toggle-size: 120px;
 
   /* fill-out sheet (a Mac window in XMB dress) */
   --sheet-width: 340px;
@@ -60,13 +62,26 @@
   --titlebar-height: 40px;
   --sheet-max-height: calc(84vh - 140px); /* keeps a sheet on screen; scrolls inside if the window is shorter */
 
+  /* positioned against .titleCardGroup (Hero.jsx), NOT .pinInner directly —
+     that wrapper has no explicit width, so it shrinks to fit titlecard.png
+     itself, meaning right: 0 here lines up exactly with the image's own
+     right edge regardless of its actual rendered width, and top: 100%
+     puts the toggle straight down, directly underneath it. */
   position: absolute;
-  left: 195px; /* fixed gutter, so the menu sits beside the case instead of on it */
-  top: 15%;
+  right: 0;
+  top: 40%;
+  margin-top: var(--opt-gap);
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  align-items: center; /* toggle + options share one centered horizontal axis */
+  /* flex-end, not center — .menu shrinks to fit its widest child (the
+     toggle, now --toggle-size: 120px, wider than the option pills), so
+     centering left the narrower options inset from that child's own right
+     edge instead of flush with it. flex-end keeps whichever child is
+     narrower right-aligned against the wider one, so both the toggle and
+     the options stay flush with .titleCardGroup's right edge (right: 0
+     above) regardless of which one happens to be wider. */
+  align-items: flex-end;
   gap: var(--opt-gap);
   font-family: var(--mac-font);
   transition: opacity 0.3s ease;
@@ -80,68 +95,40 @@
   pointer-events: none;
 }
 
-/* ─── + toggle — a big, crisp + in a transparent frosted box ─── */
+/* ─── + toggle — just optionButton.png, no glass/background box ─── */
 
 .toggle {
+  /* width/height both driven by the same --toggle-size var, so this stays
+     a true square regardless of optionButton.png's own natural aspect
+     ratio — the image itself is object-fit: cover inside it (see
+     .toggleImg), never stretched/letterboxed into a non-square shape. */
   width: var(--toggle-size);
   height: var(--toggle-size);
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
   padding: 0;
-  font-family: var(--opt-font);
-  font-size: var(--toggle-font-size);
-  font-weight: 300; /* thick enough to read against a busy background */
-  line-height: 1;
-  color: var(--toggle-color);
-  text-shadow: 0 0 10px rgba(var(--xmb-glow), 0.6);
-  background: var(--toggle-bg);
-  -webkit-backdrop-filter: var(--mac-glass-blur);
-  backdrop-filter: var(--mac-glass-blur);
+  background: none;
   border: none;
-  border-radius: var(--toggle-radius);
-  box-shadow: var(--toggle-shadow);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  animation: xmbBreathe 3.6s ease-in-out infinite;
+  overflow: hidden; /* clips the image to this square, whatever its own shape */
+  transition: transform 0.2s ease;
 }
 
-/* idle "breathing" glow on the box, like an XMB icon waiting to be picked */
-@keyframes xmbBreathe {
-  0%, 100% { box-shadow: var(--toggle-shadow), 0 0 0 rgba(var(--xmb-glow), 0); }
-  50% { box-shadow: var(--toggle-shadow), 0 0 18px rgba(var(--xmb-glow), 0.5); }
+.toggleImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.toggle:hover,
-.toggle[data-open] {
-  animation: none;
-  background: var(--opt-hover-bg), var(--toggle-bg);
-  box-shadow: var(--mac-hairline), var(--opt-glow);
+.toggle[data-open] .toggleImg {
+  transform: rotate(135deg);
 }
 
 .toggle:active {
   transform: scale(0.96);
-}
-
-/* the glyph itself turns into a × — the button doesn't rotate.
-   aria-label carries the accessible name.
-   An explicit, square, centered box (not display: block sized by the
-   font's own line-height, with a margin-top hack nudging the glyph into
-   place) — a plain text box's line-height typically doesn't center the
-   glyph within its own bounds, so rotating around that box's default 50%
-   50% origin rotated around a point offset from the "+"'s actual visual
-   center, making it visibly drift off-center as it spun into the ×
-   instead of turning cleanly in place. */
-.toggle::before {
-  content: '+';
-  display: grid;
-  place-items: center;
-  width: 1em;
-  height: 1em;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.toggle[data-open]::before {
-  transform: rotate(135deg);
 }
 
 .toggle:focus-visible,
@@ -403,9 +390,10 @@
 /* ─── responsive ─────────────────────────────────────────── */
 
 @media (max-width: 768px) {
+  /* right: 0; top: 100% from the base rule still holds — .menu tracks
+     .titleCardGroup's own position/size, which has its own mobile
+     override in Hero.module.css */
   .menu {
-    left: 12px;
-    top: 18%;
     --opt-pad-x: 18px;
     --menu-item-height: 38px;
     --sheet-width: min(340px, calc(100vw - 150px));

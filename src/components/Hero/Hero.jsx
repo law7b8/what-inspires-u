@@ -396,19 +396,22 @@ export default function Hero() {
             <section className={styles.hero} id="hero" ref={heroRef}>
                 <div className={styles.pinInner} ref={pinRef}>
 
-                    {/* + toggle, its cascading options down the left side,
-                        and the post-img/post-mp3 fill-out sheets — all
-                        self-contained in PlusMenu. Deliberately independent
-                        of OptionsMenu (the orbiting text block). */}
-                    <PlusMenu onLaunchMp3={launchMp3} onLaunchImg={launchImg} />
-
-                    {/* the title card image — top-left, above the + toggle.
-                        Fixed screen position, same "hovering" approach as
-                        PlusMenu — not part of .caseWrap's layout or the
-                        scroll fly-apart. Lower z-index than PlusMenu's menu
-                        (see Hero.module.css) so the toggle always paints on
-                        top if the two ever overlap. */}
-                    <img src="/titlecard.png" alt="" className={styles.titleCardImg} />
+                    {/* the title card group — top-left. .titleCardGroup
+                        shrinks to the image's own natural width (no
+                        explicit width set on a position: absolute block),
+                        and PlusMenu is positioned against THIS wrapper
+                        (right: 0; top: 100%) rather than .pinInner
+                        directly, so its right edge lines up with the
+                        title card's right edge exactly, whatever the
+                        image's actual rendered width turns out to be, with
+                        the + toggle and its cascading options going
+                        straight down directly underneath it. Fixed screen
+                        position, not part of .caseWrap's layout or the
+                        scroll fly-apart. */}
+                    <div className={styles.titleCardGroup}>
+                        <img src="/titlecard.png" alt="" className={styles.titleCardImg} />
+                        <PlusMenu onLaunchMp3={launchMp3} onLaunchImg={launchImg} />
+                    </div>
 
                     {/* .mp3/.img files shot in from the sheets — one shared
                         pool, floating and bouncing off the screen's edges
@@ -417,7 +420,7 @@ export default function Hero() {
 
                     <div className={styles.floatCase}>
                         <div className={styles.caseWrap} ref={caseWrapRef}>
-                            <OptionsMenu logoRef={logoDiscRef} />
+                            <OptionsMenu logoRef={logoDiscRef} caseRef={caseDiscRef} />
                             <SideImage />
                             <CaseDisc ref={caseDiscRef} />
                         </div>
