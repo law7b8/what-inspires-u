@@ -6,13 +6,15 @@ import LogoDisc from './LogoDisc';
 import OptionsMenu from './OptionsMenu';
 import PlusMenu from './PlusMenu';
 import FloatingFiles from './FloatingFiles';
+import FileWindow from './FileWindow';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
 import styles from './Hero.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MAX_MP3_FILES = 8;
+const MAX_FLOATING_FILES = 8;
+const MAX_OPEN_WINDOWS = 4;
 
 // where the disc parks once it becomes the background watermark — also
 // duplicated (as a trivial one-liner) in LogoDisc.jsx, which needs the
@@ -37,16 +39,49 @@ export default function Hero() {
     const caseWrapRef = useRef(null);
     const hintRef = useRef(null);
 
-    // .mp3 files launched from the + menu, oldest dropped past the cap so the
-    // hero doesn't fill up. In-memory only — they don't survive a reload.
-    const [mp3Files, setMp3Files] = useState([]);
-    const launchMp3 = (track, origin) => {
-        setMp3Files((files) => [...files, { ...track, origin, id: crypto.randomUUID() }].slice(-MAX_MP3_FILES));
+    // .mp3/.img files launched from the + menu — one shared pool, kind-
+    // tagged per file so FloatingFiles can render (and bounce) both
+    // together, oldest dropped past the cap so the hero doesn't fill up.
+    // In-memory only — they don't survive a reload.
+    const [floatingFiles, setFloatingFiles] = useState([]);
+    const launchFile = (kind, payload, origin) => {
+        setFloatingFiles((files) => [...files, { ...payload, kind, origin, id: crypto.randomUUID() }].slice(-MAX_FLOATING_FILES));
     };
+    const launchMp3 = (track, origin) => launchFile('mp3', track, origin);
+    const launchImg = (file, origin) => launchFile('img', file, origin);
+
+    // windows opened by clicking a floating file — a snapshot of that
+    // file's own data (not a live reference into floatingFiles, which can
+    // evict older entries past MAX_FLOATING_FILES while its window stays
+    // open), positioned in a small cascade near the top-right corner so
+    // several opened in a row don't land exactly on top of each other.
+    // nextZRef is a plain incrementing counter, not React state — it only
+    // ever needs to hand out the next-highest z-index, never trigger a
+    // render on its own.
+    const [openWindows, setOpenWindows] = useState([]);
+    const nextZRef = useRef(10);
+
+    const openFileWindow = (file) => {
+        setOpenWindows((wins) => {
+            if (wins.some((w) => w.id === file.id)) {
+                // already open — bring it to front instead of duplicating
+                return wins.map((w) => (w.id === file.id ? { ...w, z: nextZRef.current++ } : w));
+            }
+            const slot = wins.length % MAX_OPEN_WINDOWS;
+            const spawned = {
+                ...file,
+                x: window.innerWidth - 312 - slot * 28,
+                y: 96 + slot * 28,
+                z: nextZRef.current++,
+            };
+            return [...wins, spawned].slice(-MAX_OPEN_WINDOWS);
+        });
+    };
+    const closeFileWindow = (id) => setOpenWindows((wins) => wins.filter((w) => w.id !== id));
+    const focusFileWindow = (id) => setOpenWindows((wins) => wins.map((w) => (w.id === id ? { ...w, z: nextZRef.current++ } : w)));
 
     const caseDiscRef = useRef(null);    // CaseDisc's imperative handle: { discRef, imgGroupRef, boostSpin }
     const logoDiscRef = useRef(null);    // LogoDisc's imperative handle: { groupRef, boostSpin }
-    const optionsMenuRef = useRef(null); // OptionsMenu's imperative handle: { elRef }
 
     useEffect(() => {
         const hero = heroRef.current;
@@ -219,13 +254,30 @@ export default function Hero() {
                         // matter what physical distance is set here — so
                         // bigger number here = less visual change per
                         // pixel scrolled = slower, more gradual feel;
-                        // smaller = faster/snappier.
-                        end: () => '+=' + Math.round(window.innerHeight * 0.5),
+                        // smaller = faster/snappier. This is also literally
+                        // how much blank scroll space (the pin-spacer) sits
+                        // between the Hero unpinning and the real page
+                        // content starting — was 0.5 (half a viewport),
+                        // which read as leftover dead space once the
+                        // header/options had already popped in.
+                        end: () => '+=' + Math.round(window.innerHeight * 0.3),
                         // pin an inner element (not the <section> React
                         // owns) so the pin-spacer wrapper never fights
                         // React on unmount
                         pin: pinEl,
                         pinSpacing: true,
+                        // ScrollTrigger's default pin technique in modern
+                        // browsers applies a CSS transform to the pinned
+                        // element rather than position: fixed — but a
+                        // transform on an ancestor becomes the containing
+                        // block for any position: fixed descendant (CSS
+                        // spec behavior), which was trapping FloatingFiles'
+                        // .layer (position: fixed, meant to span the true
+                        // viewport) inside pinEl's own narrower box the
+                        // moment pinning kicked in. Forcing the fixed
+                        // technique here avoids introducing that transform
+                        // at all.
+                        pinType: 'fixed',
                         scrub: 0.3,
                         invalidateOnRefresh: true,
                         // once the user stops scrolling mid-transition,
@@ -244,7 +296,6 @@ export default function Hero() {
 
                 const caseImgGroupEl = caseDiscRef.current.imgGroupRef.current;
                 const discEl = caseDiscRef.current.discRef.current;
-                const optionsEl = optionsMenuRef.current.elRef.current;
                 const logoEl = logoDiscRef.current.groupRef.current;
 
                 tl
@@ -255,11 +306,18 @@ export default function Hero() {
                     // opacity once at this level fades the whole case —
                     // front and back layers together — at the same
                     // visible rate, so the shadow layer stays through the
-                    // full fly-apart instead of vanishing early.
-                    .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0, duration: ACT1_DURATION }, 0)
+                    // full fly-apart instead of vanishing early. Floors at
+                    // 0.15, not 0 — CaseDisc and SideImage (which have no
+                    // opacity tween of their own, only what they inherit
+                    // from this wrapper) stay faintly visible in their
+                    // fully-receded pose instead of disappearing entirely.
+                    // OptionsMenu (the title card) isn't touched by this
+                    // timeline at all anymore — it's now a fixed, always-
+                    // visible screen element like the + toggle, not part
+                    // of the case's own fly-apart.
+                    .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0.15, duration: ACT1_DURATION }, 0)
                     .to(caseImgGroupEl, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
                     .to(discEl, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
-                    .to(optionsEl, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
                     .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
                     // the ambient logo gets the same fly-out-and-fade
                     // treatment as the case above — shrinks, recedes, and
@@ -339,18 +397,27 @@ export default function Hero() {
                 <div className={styles.pinInner} ref={pinRef}>
 
                     {/* + toggle, its cascading options down the left side,
-                        and the post-img fill-out sheet — all self-contained
-                        in PlusMenu. Deliberately independent of
-                        OptionsMenu (the orbiting text block). */}
-                    <PlusMenu onLaunchMp3={launchMp3} />
+                        and the post-img/post-mp3 fill-out sheets — all
+                        self-contained in PlusMenu. Deliberately independent
+                        of OptionsMenu (the orbiting text block). */}
+                    <PlusMenu onLaunchMp3={launchMp3} onLaunchImg={launchImg} />
 
-                    {/* .mp3 files shot in from the "post mp3" sheet — they
-                        float around inside the hero's bounds. */}
-                    <FloatingFiles files={mp3Files} />
+                    {/* the title card image — top-left, above the + toggle.
+                        Fixed screen position, same "hovering" approach as
+                        PlusMenu — not part of .caseWrap's layout or the
+                        scroll fly-apart. Lower z-index than PlusMenu's menu
+                        (see Hero.module.css) so the toggle always paints on
+                        top if the two ever overlap. */}
+                    <img src="/titlecard.png" alt="" className={styles.titleCardImg} />
+
+                    {/* .mp3/.img files shot in from the sheets — one shared
+                        pool, floating and bouncing off the screen's edges
+                        together. Clicking one opens its FileWindow below. */}
+                    <FloatingFiles files={floatingFiles} onOpen={openFileWindow} />
 
                     <div className={styles.floatCase}>
                         <div className={styles.caseWrap} ref={caseWrapRef}>
-                            <OptionsMenu ref={optionsMenuRef} logoRef={logoDiscRef} />
+                            <OptionsMenu logoRef={logoDiscRef} />
                             <SideImage />
                             <CaseDisc ref={caseDiscRef} />
                         </div>
@@ -359,6 +426,21 @@ export default function Hero() {
             </section>
 
             <LogoDisc ref={logoDiscRef} />
+
+            {/* draggable "open file" windows — outside .pinInner entirely
+                (position: fixed in FileWindow.module.css), so they're never
+                affected by the pinned section's own stacking/scroll. */}
+            {openWindows.map((w) => (
+                <FileWindow
+                    key={w.id}
+                    data={w}
+                    x={w.x}
+                    y={w.y}
+                    zIndex={w.z}
+                    onClose={() => closeFileWindow(w.id)}
+                    onFocus={() => focusFileWindow(w.id)}
+                />
+            ))}
         </>
     );
 }

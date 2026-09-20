@@ -11,6 +11,14 @@
        gap below the header's actual (much shorter) content on every page,
        not just Home — that was the "extra room at the bottom" people were
        scrolling through. Let it size to its content instead. */
+    transition: opacity 0.3s ease;
+}
+
+/* HudControls (bottom-right corner button) sets this on <html> — fades the
+   header out for a clean screen recording/screenshot. */
+:global(html[data-hud-hidden]) .wrapper {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ─── topbar ────────────────────────────────────────────── */

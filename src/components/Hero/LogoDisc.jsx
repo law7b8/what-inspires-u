@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { gsap } from 'gsap';
 import { createSpinBooster } from './spinBooster';
-import { DISC_SPIN, createYSpin } from './discSpin';
+import { DISC_SPIN, createTumble } from './discSpin';
 import styles from './LogoDisc.module.css';
 
 // where the disc parks once it becomes the background watermark — also
@@ -82,17 +82,17 @@ const LogoDisc = forwardRef(function LogoDisc(_props, ref) {
             // ── full experience ──
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(ambientGroup, {
-                    opacity: 0.85, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, x: 0, y: 0, z: 0,
+                    opacity: .74, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, rotationZ: 0, x: 0, y: 0, z: 0,
                 });
 
-                // the logo's own forever spin — Y axis only, at the logo's
-                // rate from discSpin.js (paired with the case's, which
-                // turns at a different rate). Spins continuously from
+                // the logo's own forever tumble — 3-axis (X/Y/Z), at the
+                // logo's rate from discSpin.js (paired with the case's,
+                // which turns at a different rate). Spins continuously from
                 // mount, independent of scroll. Hero's shared scroll
                 // timeline only ever touches scale/z/x/y/opacity on this
                 // same element (never rotation), so the two never fight
                 // over the same property.
-                const ambientTumble = createYSpin(ambientGroup, DISC_SPIN.logo.seconds, { onUpdate: syncShadowToSpin });
+                const ambientTumble = createTumble(ambientGroup, DISC_SPIN.logo.seconds, { onUpdate: syncShadowToSpin });
 
                 boosterRef.current = createSpinBooster(ambientTumble);
 

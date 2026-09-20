@@ -4,6 +4,31 @@
   position: relative;
 }
 
+/* ─── title card image ───────────────────────────────────────
+   Top-left, above the + toggle — same fixed/"hovering" positioning
+   approach as PlusMenu's own .menu (position: absolute against .pinInner,
+   plain left/top, no scroll-timeline or orbit tracking involved).
+   z-index deliberately BELOW PlusMenu's .menu (2000) — they were the same
+   value before, which let this image (later in the DOM) paint on top of
+   and hide the + toggle wherever the two happened to overlap. */
+.titleCardImg {
+  position: absolute;
+  left: 32px;
+  top: 1%;
+  max-width: 220px;
+  height: auto;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .titleCardImg {
+    left: 12px;
+    top: 8px;
+    max-width: 140px;
+  }
+}
+
 /* ─── fixed footer ───────────────────────────────────────────
    Pinned to the bottom of the viewport so it stays visible through
    scrolling instead of only appearing once the page scrolls all the way
@@ -15,6 +40,14 @@
   right: 0;
   z-index: 1500;
   background: transparent;
+  transition: opacity 0.3s ease;
+}
+
+/* HudControls (bottom-right corner button) sets this on <html> — fades the
+   footer out for a clean screen recording/screenshot. */
+:global(html[data-hud-hidden]) .fixedFooter {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* the actual pinned element — an inner div (kept in flow so its pin-spacer
@@ -50,6 +83,12 @@
   align-items: center;
   gap: 0;
   position: relative;
+  /* nudges the case/side-image/options group left of dead-center. Plain
+     `left` on a position: relative box, not a transform — GSAP (the
+     mouse-parallax quickTo + the scroll timeline) owns this element's
+     `transform` every frame, so a static offset has to live on a
+     different property to avoid getting overwritten each frame. */
+  left: -50px;
   will-change: transform;
   /* no CSS transition on transform here — GSAP (scroll timeline + the
      mouse-parallax quickTo in Hero.jsx) sets this element's transform

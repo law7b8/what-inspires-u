@@ -1,0 +1,20 @@
+.handle {
+  touch-action: none; /* pointer events drive the drag directly; no native touch-scroll/zoom fighting it */
+  cursor: grab;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+/* follows the cursor everywhere on the page — see the portal-into-body
+   note in DragToLaunch.jsx for why this can't just be a normal child */
+.ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0.85;
+  will-change: transform;
+}

@@ -1,7 +1,11 @@
-/* fills the hero (.pinInner) and clips to it — the files bounce off its
-   edges. Above the case, below the + menu (2000). Never blocks clicks. */
+/* fills the true viewport and clips to it — the files bounce off the real
+   screen edges. NOT position: absolute — that would size this to .hero's
+   own box, which is narrower than the screen because .app carries its own
+   padding (1.5rem, in app.css), so files were bouncing off an invisible
+   boundary short of the actual edges. Above the case, below the + menu
+   (2000). Never blocks clicks. */
 .layer {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 1000;
   overflow: hidden;
@@ -9,11 +13,22 @@
 }
 
 /* positioned every frame by the ticker in FloatingFiles.jsx; hidden until
-   its simulation exists so it doesn't flash at the corner */
+   its simulation exists so it doesn't flash at the corner. A real <button>
+   (not a div) so it's keyboard-reachable and announced properly — reset to
+   plain/invisible chrome since it's just a hit target around the file
+   preview inside it. pointer-events: auto overrides .layer's own "none"
+   (which exists so the empty space between files stays click-through). */
 .floater {
   position: absolute;
   left: 0;
   top: 0;
   opacity: 0;
   will-change: transform;
+  pointer-events: auto;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
 }

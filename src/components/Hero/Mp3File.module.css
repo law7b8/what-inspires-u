@@ -1,0 +1,88 @@
+.file {
+  --file-w: 76px;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+}
+
+/* the thumbnail IS the icon — a mac Finder/QuickLook media preview shows
+   the actual artwork filling a plain rounded square with its own drop
+   shadow; the folded-corner "page" look is for blank text documents, not
+   something with real cover art to show */
+.thumbWrap {
+  position: relative;
+  width: var(--file-w);
+  aspect-ratio: 1 / 1;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+}
+
+.thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #e6e6e6;
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.zoom img {
+  transform: scale(1.34);
+}
+
+.noCover {
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  color: #999999;
+}
+
+/* small file-kind badge overlaid on the thumbnail — the mac-icon
+   convention for flagging a file's type, instead of a caption living
+   inside a page frame */
+.badge {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 1px 4px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  border-radius: 3px;
+}
+
+/* Finder's selected-name pill — greyish frosted glass instead of a solid
+   accent fill, so it reads as a translucent label over the scene rather
+   than a colored UI chip */
+.label {
+  max-width: 100%;
+  padding: 2px 7px;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: #ffffff;
+  background: rgba(90, 90, 95, 0.38);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}

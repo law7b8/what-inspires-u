@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { gsap } from 'gsap';
 import { createSpinBooster } from './spinBooster';
-import { DISC_SPIN, createYSpin } from './discSpin';
+import { DISC_SPIN, createTumble } from './discSpin';
 import styles from './CaseDisc.module.css';
 
 // The CD case/disc — front+back case artwork with real Z-depth, a spine,
@@ -33,14 +33,14 @@ const CaseDisc = forwardRef(function CaseDisc(_props, ref) {
         const ctx = gsap.context(() => {
             gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
 
-            // the case's own idle spin — Y axis only, at the case's rate
-            // from discSpin.js (paired with the logo's, which turns at a
-            // different rate). Runs the whole time, independent of the CSS
-            // bob on the wrapper divs and of Hero's scroll timeline, which
-            // only ever touches scale/z/opacity on the image group (and
-            // rotationX/Y on discRef, a different element) during the
+            // the case's own idle tumble — 3-axis (X/Y/Z), at the case's
+            // rate from discSpin.js (paired with the logo's, which turns at
+            // a different rate). Runs the whole time, independent of the
+            // CSS bob on the wrapper divs and of Hero's scroll timeline,
+            // which only ever touches scale/z/opacity on the image group
+            // (and rotationX/Y on discRef, a different element) during the
             // fly-apart.
-            const caseTumble = createYSpin(caseImgGroupRef.current, DISC_SPIN.case.seconds);
+            const caseTumble = createTumble(caseImgGroupRef.current, DISC_SPIN.case.seconds);
 
             boosterRef.current = createSpinBooster(caseTumble);
 

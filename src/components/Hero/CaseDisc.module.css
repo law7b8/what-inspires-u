@@ -164,7 +164,7 @@
 .discCaseGroup {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 24%;
   transform: translate(-50%, -50%);
   height: 500px;
   width: 100%;
@@ -190,6 +190,8 @@
   /* dark themes: multiply drops the PNG's light translucent box into the
      background and turns the case into smoked glass */
   mix-blend-mode: var(--wiy-case-blend, normal);
+  
+  opacity: .85;
 }
 
 /* the case is a two-sided slab (see CaseDisc.jsx): front face at z 0, its

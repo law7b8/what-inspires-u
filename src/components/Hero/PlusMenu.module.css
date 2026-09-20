@@ -4,32 +4,38 @@
    white type, and a soft blue-white glow on the selected item, which also
    swells slightly like an XMB icon. Every look-and-feel knob lives in the
    block below — change a value here and the toggle, the options and the
-   sheets all follow. Everything in the column is centered on one vertical
-   axis. */
+   sheets all follow. Options come straight down from behind the toggle,
+   stacked in a column; each option's own sheet slides out to the right,
+   from behind that option specifically. */
 .menu {
-  /* shared */
-  --mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  /* shared — same font the rest of the site (and the /new post page's own
+     forms) use, not a separate Apple-system stack, and one shared size
+     var so the option pills, the sheet's titlebar, and every label/input/
+     button inside a sheet all read as one consistent typographic system
+     instead of several different sizes. */
+  --mac-font: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  --menu-font-size: 13px;
   --xmb-glow: var(--wiy-glow, 160, 200, 255);   /* rgb of the glow — set per theme in tokens.css */
-  --xmb-text: var(--wiy-menu-text, #ffffff);
-  --xmb-text-dim: rgba(255, 255, 255, 0.82);
+  --xmb-text: #000000;
+  --xmb-text-dim: rgba(0, 0, 0, 0.7);
   --mac-glass: var(--wiy-glass, rgba(18, 22, 32, 0.52)); /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 
   /* ONE height for the + box and every option pill, so they always match */
-  --menu-item-height: 40px;
+  --menu-item-height: 44px;
 
   /* options */
   --opt-font: var(--mac-font);
-  --opt-font-size: 14px;
+  --opt-font-size: var(--menu-font-size);
   --opt-letter-spacing: 0.06em;
   --opt-color: var(--xmb-text);
   --opt-bg: var(--mac-glass);
-  --opt-hover-color: var(--wiy-menu-text-hover, #ffffff);
+  --opt-hover-color: #000000;
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
-  --opt-radius: 6px;
+  --opt-radius: 0px;
   --opt-pad-x: 12px; /* auto = same width for all options, based on the widest one */
   --opt-shadow: var(--mac-hairline);                     /* no drop shadow — cleaner */
   --opt-gap: 12px;          /* vertical space between options */
@@ -41,13 +47,13 @@
   --toggle-font-size: 38px;
   --toggle-color: var(--xmb-text);
   --toggle-bg: var(--mac-glass);
-  --toggle-radius: 20px;    /* 50% makes it a circle */
+  --toggle-radius: 0px;
   --toggle-shadow: var(--mac-hairline), var(--mac-shadow);
 
   /* fill-out sheet (a Mac window in XMB dress) */
   --sheet-width: 340px;
   --sheet-gap: 20px;        /* space between the option and where the sheet emerges */
-  --sheet-radius: 8px;
+  --sheet-radius: 0px;
   --sheet-bg: var(--wiy-sheet-bg, rgba(16, 20, 30, 0.5)); /* see-through, blurred behind */
   --sheet-blur: blur(24px) saturate(160%);
   --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
@@ -55,14 +61,23 @@
   --sheet-max-height: calc(84vh - 140px); /* keeps a sheet on screen; scrolls inside if the window is shorter */
 
   position: absolute;
-  left: 32px; /* fixed gutter, so the menu sits beside the case instead of on it */
-  top: 20%;
+  left: 195px; /* fixed gutter, so the menu sits beside the case instead of on it */
+  top: 15%;
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  align-items: center; /* toggle + options share one centered axis */
+  align-items: center; /* toggle + options share one centered horizontal axis */
   gap: var(--opt-gap);
   font-family: var(--mac-font);
+  transition: opacity 0.3s ease;
+}
+
+/* HudControls (bottom-right corner button) sets this on <html> — fades the
+   whole + menu out for a clean screen recording/screenshot. The scene
+   itself (case/logo/waves/floating files) isn't HUD and stays put. */
+:global(html[data-hud-hidden]) .menu {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ─── + toggle — a big, crisp + in a transparent frosted box ─── */
@@ -101,7 +116,6 @@
   animation: none;
   background: var(--opt-hover-bg), var(--toggle-bg);
   box-shadow: var(--mac-hairline), var(--opt-glow);
-  transform: scale(1.05);
 }
 
 .toggle:active {
@@ -109,11 +123,20 @@
 }
 
 /* the glyph itself turns into a × — the button doesn't rotate.
-   aria-label carries the accessible name. */
+   aria-label carries the accessible name.
+   An explicit, square, centered box (not display: block sized by the
+   font's own line-height, with a margin-top hack nudging the glyph into
+   place) — a plain text box's line-height typically doesn't center the
+   glyph within its own bounds, so rotating around that box's default 50%
+   50% origin rotated around a point offset from the "+"'s actual visual
+   center, making it visibly drift off-center as it spun into the ×
+   instead of turning cleanly in place. */
 .toggle::before {
   content: '+';
-  display: block;
-  margin-top: -2px; /* optical centering of the glyph */
+  display: grid;
+  place-items: center;
+  width: 1em;
+  height: 1em;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -142,8 +165,8 @@
 
 .item {
   position: relative;
-  margin-left: calc((var(--count) - 1 - var(--i)) * var(--cascade-indent));
-  /* GSAP owns opacity/visibility/x from here — closed by default so there's
+  margin-top: calc((var(--count) - 1 - var(--i)) * var(--cascade-indent));
+  /* GSAP owns opacity/visibility/y from here — closed by default so there's
      no flash before the first effect runs */
   opacity: 0;
   visibility: hidden;
@@ -181,16 +204,23 @@
   border-radius: var(--opt-radius);
   box-shadow: var(--opt-shadow);
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  /* dimmed/shrunk by default — the PS3/XMB "shuffle" read: only the option
+     under the highlight (data-focused, set by arrow keys/wheel/hover/click
+     in PlusMenu.jsx) is at full strength, so cycling through options with
+     more than 2 of them reads as sliding a spotlight down the column */
+  opacity: 0.6;
+  transform: scale(0.94);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* the XMB selection: brighter glass, a soft glow, and a small swell */
 .opt:hover,
-.optActive {
+.optActive,
+.opt[data-focused] {
+  opacity: 1;
   background: var(--opt-hover-bg), var(--opt-bg);
   color: var(--opt-hover-color);
   box-shadow: var(--mac-hairline), var(--opt-glow);
-  transform: scale(var(--opt-select-scale));
 }
 
 .opt:active {
@@ -241,7 +271,7 @@
 }
 
 .titleText {
-  font-size: 13px;
+  font-size: var(--menu-font-size);
   font-weight: 300;
   letter-spacing: 0.06em;
   text-transform: lowercase;
@@ -261,13 +291,13 @@
   color: var(--xmb-text-dim);
   background: transparent;
   border: none;
-  border-radius: 50%;
+  border-radius: 0;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .close:hover {
-  color: #ffffff;
+  color: #000000;
   background: rgba(255, 255, 255, 0.16);
 }
 
@@ -294,7 +324,7 @@
 /* dark-glass controls inside the sheet */
 .sheetBody label {
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: var(--menu-font-size);
   font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: lowercase;
@@ -306,11 +336,11 @@
   margin-bottom: 12px;
   padding: 6px 9px;
   font-family: var(--mac-font);
-  font-size: 13px;
+  font-size: var(--menu-font-size);
   color: var(--xmb-text);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .sheetBody input::placeholder,
@@ -331,14 +361,14 @@
 
 .sheetBody button {
   font-family: var(--mac-font);
-  font-size: 13px;
+  font-size: var(--menu-font-size);
   font-weight: 300;
   letter-spacing: 0.06em;
   padding: 5px 14px;
   color: var(--xmb-text);
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
@@ -391,7 +421,12 @@
   }
 
   .opt:hover,
-  .optActive {
+  .optActive,
+  .opt[data-focused] {
+    transform: none;
+  }
+
+  .opt {
     transform: none;
   }
 }

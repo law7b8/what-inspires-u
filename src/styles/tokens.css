@@ -1,13 +1,33 @@
 /* ════════════════════════════════════════════════════════════════════
    COLORS — every color on the site lives in this file.
 
-   Two themes:
-     :root                  → "paper" (the default: your seafoam theme)
-     [data-theme='dusk']    → "dusk"  (the secondary: violet night)
-   Switch with the chips bottom-right, or press 1 (paper) / 2 (dusk).
+   One theme now (paper — mostly white/airy, a slight muted purple-pink).
+   There used to be a second "dusk" theme with a switcher UI; both were
+   removed for simplicity — everything just reads :root now. If a second
+   theme comes back later, re-add a [data-theme='x'] block the same shape
+   as this one.
 
-   To recolor, edit the values in the block for that theme. Each block has
-   the same sections in the same order:
+   ── How to recolor ──────────────────────────────────────────────────
+   The SEEDS section below is usually all you need to touch:
+     seed-bg      the page's base tone (surfaces/lines/the wave gradient
+                  are all mixed from this)
+     seed-ink     the base text tone (soft/faint text, borders are mixed
+                  from this + seed-bg)
+     seed-accent  the one accent hue (buttons, focus rings, links)
+     seed-wave    the one hue the 5 PS3 wave ribbons are generated from
+     seed-dark    the dark tone frosted-glass panels (the + box, sheets)
+                  are mixed from — kept separate since the page itself
+                  is light, so panels need a deliberately dark tone
+
+   Everything below SEEDS is DERIVED from those five via color-mix() —
+   change a seed and everything mixed from it updates together, instead
+   of hand-picking ~20 separate values that have to be kept harmonious
+   by eye (this is what used to make the 5 wave-ribbon colors especially
+   fiddly: they're now just one hue at 5 lightness steps). A few values
+   are still written directly rather than derived — each one says why,
+   right where it's set.
+
+   Sections, in order:
      A. Page          background, and the panels/cards on top of it
      B. Text          main, softer and faint text; lines
      C. Accent        focus rings, buttons, tags, links
@@ -17,65 +37,77 @@
                       so saving this file updates the page without a reload
      G. Hero art      how the CD case and logo are blended (advanced)
 
-   Formats:  #rrggbb / rgba(...)  — normal colors
-             "R, G, B"            — a bare triplet, e.g. 185, 165, 255. Used
-                                    where the site needs the color at several
-                                    opacities (the glow, the wave dust).
-   Wave colors (F) must be #rrggbb.
+   Formats:  #rrggbb / rgba(...) / color-mix(...)  — normal colors
+             "R, G, B"                             — a bare triplet, e.g.
+                                    185, 165, 255. Used where the site
+                                    needs the color at several opacities
+                                    (the glow, the wave dust) via
+                                    rgba(var(--x), alpha) — color-mix()
+                                    can't produce this raw triplet form,
+                                    so these few stay hand-set.
+   Wave ribbon/gradient colors (F) must resolve to #rrggbb-equivalent
+   (color-mix() is fine — the browser resolves it to a real color before
+   PS3Background's canvas code ever sees it).
 
-   Strength/speed of the background (not colors) is in App.jsx → BACKGROUND.
+   Strength/speed of the background (not colors) is in App.jsx → BACKGROUND
+   — turned down there to a faint wash to match the airy/white direction.
    Sizes, radii and spacing of the options menu are in
    components/Hero/PlusMenu.module.css.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ─── paper (default) — retro / cool: 50s seafoam diner ────────────
-   Pale seafoam stock, deep slate-navy ink, cobalt + teal + aqua.
-   Same variable names as before, so it's a drop-in replacement.
-   ──────────────────────────────────────────────────────────────── */
-/* :root, so it applies before any script runs — no flash on load */
 :root {
   color-scheme: light;
 
+  /* ── SEEDS — the handful of values actually worth hand-tuning ── */
+  --wiy-seed-bg: #faf7fb;       /* near-white, the faintest warm lavender-pink cast */
+  --wiy-seed-ink: #3a2e3c;      /* muted dark plum — legible on white, warmer than plain black/navy */
+  --wiy-seed-accent: #b98bab;   /* muted rose-mauve — the "purple pink muted" accent */
+  --wiy-seed-wave: #caa0c9;     /* soft orchid-pink; the 5 wave ribbons are generated from this */
+  --wiy-seed-dark: var(--wiy-seed-ink); /* frosted-panel base — the page is light, so panels borrow the dark ink tone */
+
   /* ── A. Page ── */
-  --wiy-bg: #dfe9e6;            /* pale seafoam */
-  --wiy-surface: #f1f6f4;       /* lighter tile-white for cards/panels */
-  --wiy-surface-alt: #cdc5d6;   /* faded mint-grey */
+  --wiy-bg: var(--wiy-seed-bg);          /* solid now, not the earlier transparent experiment — an actual white/airy page, not a canvas-shows-through hack */
+  --wiy-surface: color-mix(in srgb, var(--wiy-seed-bg) 70%, white 30%);          /* whiter still, for cards/panels */
+  --wiy-surface-alt: color-mix(in srgb, var(--wiy-seed-bg) 90%, var(--wiy-seed-wave) 10%); /* same airy white, a whisper of the pink-purple hue */
 
   /* ── B. Text & lines ── */
-  --wiy-ink: #14212b;           /* deep slate navy */
-  --wiy-ink-soft: #46596a;
-  --wiy-ink-faint: #566a79;
-  --wiy-line: #a9c0c0;
-  --wiy-line-strong: #14212b;
+  --wiy-ink: var(--wiy-seed-ink);
+  --wiy-ink-soft: color-mix(in srgb, var(--wiy-seed-ink) 60%, var(--wiy-seed-bg) 40%);
+  --wiy-ink-faint: color-mix(in srgb, var(--wiy-seed-ink) 42%, var(--wiy-seed-bg) 58%);
+  --wiy-line: color-mix(in srgb, var(--wiy-seed-ink) 16%, var(--wiy-seed-bg) 84%);
+  --wiy-line-strong: var(--wiy-seed-ink);
 
   /* ── C. Accent ── */
-  --wiy-accent: #2457d6;        /* cobalt */
-  --wiy-accent-solid: #1e4fb8;  /* filled buttons (white text) */
-  --wiy-accent-ink: #1a469f;    /* accent used as text on light surfaces */
+  --wiy-accent: var(--wiy-seed-accent);
+  --wiy-accent-solid: color-mix(in srgb, var(--wiy-seed-accent) 82%, black 18%);  /* filled buttons (white text) */
+  --wiy-accent-ink: color-mix(in srgb, var(--wiy-seed-accent) 74%, black 26%);    /* accent used as text on light surfaces */
 
   /* ── D. Controls ── */
-  --wiy-control-bg: #14212b;
-  --wiy-control-ink: #dfe9e6;
-  --wiy-control-border: #46596a;
-  --wiy-field-bg: #c5d6d3;
-  --wiy-btn: #3a1f86;           /* teal */
+  --wiy-control-bg: var(--wiy-seed-ink);
+  --wiy-control-ink: var(--wiy-seed-bg);
+  --wiy-control-border: var(--wiy-ink-soft);
+  --wiy-field-bg: var(--wiy-surface-alt);
+  --wiy-btn: color-mix(in srgb, var(--wiy-seed-wave) 55%, var(--wiy-seed-ink) 45%);
 
   /* ── E. Options menu ── */
-  --wiy-glow: 110, 200, 210;    /* aqua glow */
-  --wiy-glass: rgba(14, 26, 36, 0.55);
-  --wiy-sheet-bg: rgba(12, 24, 34, 0.72);  /* deep enough for light text */
-  --wiy-menu-text: #f1f8f6;
+  --wiy-glow: 200, 160, 195;    /* muted pink-purple glow — raw triplet, see format note above; kept hand-set */
+  --wiy-glass: color-mix(in srgb, var(--wiy-seed-dark) 55%, transparent);
+  --wiy-sheet-bg: color-mix(in srgb, var(--wiy-seed-dark) 72%, transparent);  /* deep enough for light text */
+  --wiy-menu-text: #fdfaf9;
   --wiy-menu-text-hover: #ffffff;
 
-  /* ── F. Background waves — teal / steel / seafoam bands ── */
-  --wiy-wave-top: #f1f1f1;
-  --wiy-wave-bottom: #2d0f45;
-  --wiy-wave-1: #9e1f92;        /* teal */
-  --wiy-wave-2: #c73fe0;        /* aqua */
-  --wiy-wave-3: #5b2585;        /* steel blue */
-  --wiy-wave-4: #c07de8;        /* seafoam */
-  --wiy-wave-5: #481a68;        /* navy */
-  --wiy-wave-dust: 235, 195, 255;
+  /* ── F. Background waves — kept faint/airy in App.jsx's BACKGROUND
+     opacity/glow, not just here in the colors ── */
+  --wiy-wave-top: color-mix(in srgb, var(--wiy-seed-bg) 90%, white 10%);
+  --wiy-wave-bottom: color-mix(in srgb, var(--wiy-seed-bg) 85%, var(--wiy-seed-wave) 15%);
+  /* the five ribbons — one seed hue at five lightness steps, back to
+     front, instead of five separately hand-picked colors */
+  --wiy-wave-1: color-mix(in srgb, var(--wiy-seed-wave) 78%, black 22%);
+  --wiy-wave-2: var(--wiy-seed-wave);
+  --wiy-wave-3: color-mix(in srgb, var(--wiy-seed-wave) 55%, black 45%);
+  --wiy-wave-4: color-mix(in srgb, var(--wiy-seed-wave) 80%, white 20%);
+  --wiy-wave-5: color-mix(in srgb, var(--wiy-seed-wave) 32%, black 68%);
+  --wiy-wave-dust: 225, 190, 220;  /* raw triplet, see format note above; roughly seed-wave lightened, kept hand-set */
 
   /* ── G. Hero art (advanced) ── */
   --wiy-art-invert: 0;
@@ -84,73 +116,7 @@
   --wiy-gloss: 1;
   --wiy-case-shadow: 0;
 
-  /* unused: old blob background */
-  --wiy-blob-1: 120, 180, 190;
-  --wiy-blob-2: 130, 160, 210;
-  --wiy-blob-3: 100, 170, 160;
-  --wiy-dust: 130, 175, 185;
-
   /* type */
   --wiy-font-sans: 'DM Sans', system-ui, sans-serif;
   --wiy-font-mono: 'DM Mono', ui-monospace, monospace;
-}
-
-/* ─── dusk (alternate) — violet night ────────────────────────────── */
-[data-theme='dusk'] {
-  color-scheme: dark;
-
-  /* ── A. Page ── */
-  --wiy-bg: #13111f;                 /* the page color; the waves show over this */
-  --wiy-surface: #1c1930;            /* forms, cards */
-  --wiy-surface-alt: #27223f;        /* comments, tags */
-
-  /* ── B. Text & lines ── */
-  --wiy-ink: #f6f1fb;                /* main text */
-  --wiy-ink-soft: #cdc5e2;
-  --wiy-ink-faint: #a8a0c6;
-  --wiy-line: #362f52;
-  --wiy-line-strong: #f4efff;
-
-  /* ── C. Accent ── */
-  --wiy-accent: #b9a7ff;             /* focus ring */
-  --wiy-accent-solid: #7447e6;       /* fill under white text (nav, tags, mp3 label) */
-  --wiy-accent-ink: #c9bbff;         /* accent used as text on dark surfaces */
-
-  /* ── D. Controls ── */
-  --wiy-control-bg: #1c1930;
-  --wiy-control-ink: #f6f1fb;
-  --wiy-control-border: #6a6094;
-  --wiy-field-bg: #1c1930;
-  --wiy-btn: #3a3358;
-
-  /* ── E. Options menu ── */
-  --wiy-glow: 185, 165, 255;               /* triplet: glow on the +, hovered pills, sheet focus */
-  --wiy-glass: rgba(28, 24, 50, 0.55);     /* the + box and the option pills */
-  --wiy-sheet-bg: rgba(24, 20, 44, 0.58);  /* the post img / post mp3 windows */
-  --wiy-menu-text: #ffffff;                /* text on the pills and windows */
-  --wiy-menu-text-hover: #ffffff;
-
-  /* ── F. Background waves (PS3Background) ── */
-  --wiy-wave-top: #0a0314;                 /* base gradient, top */
-  --wiy-wave-bottom: #280a3f;              /* base gradient, bottom */
-  --wiy-wave-1: #7d1ecf;                   /* the five ribbons, back to front */
-  --wiy-wave-2: #a324f5;
-  --wiy-wave-3: #5817a3;
-  --wiy-wave-4: #c73ff8;
-  --wiy-wave-5: #3a1174;
-  --wiy-wave-dust: 235, 195, 255;          /* triplet: the drifting particles */
-
-  /* ── G. Hero art (advanced) ── */
-  --wiy-art-invert: 1;                     /* 1 flips the dark graffiti to light */
-  --wiy-logo-blend: screen;
-  --wiy-case-blend: normal;
-  --wiy-gloss: 0;                          /* CD-case sheen; 0 on dark (it shows as a box) */
-  --wiy-case-shadow: 0.45;                 /* glow under the CD case, 0 = off */
-
-  /* unused: only the old blob background (AmbientBackground) reads these */
-  --wiy-blob-1: 130, 110, 235;
-  --wiy-blob-2: 255, 160, 150;
-  --wiy-blob-3: 100, 90, 215;
-  --wiy-dust: 185, 165, 255;
-
 }

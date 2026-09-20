@@ -7,13 +7,16 @@
        .fixedFooter (position: fixed), which handles the positioning
        itself, so this would just be dead weight (and wrong, since Footer
        is no longer a flex item in that column). */
-    padding-top: 1rem;
+    padding: 1.5rem;
 }
 
+/* plain flex row, no divider borders — first child sits left, last sits
+   right (that's where "© 2026 TEMPO" originally was, restored here by
+   just being last rather than by a text-align rule). */
 .dividerRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border-top: 1px solid var(--wiy-ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .dividerCell {
@@ -21,16 +24,4 @@
     font-size: 14px;
     letter-spacing: 0.1em;
     color: var(--wiy-ink-faint);
-}
-
-.dividerCell:not(:last-child) {
-    border-right: 1px solid var(--wiy-line);
-}
-
-.dividerCell:last-child {
-    text-align: right;
-}
-
-.dividerCell:nth-child(2) {
-    text-align: center;
 }
