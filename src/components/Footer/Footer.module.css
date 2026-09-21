@@ -10,12 +10,10 @@
     padding: 1.5rem;
 }
 
-/* plain flex row, no divider borders — first child sits left, last sits
-   right (that's where "© 2026 TEMPO" originally was, restored here by
-   just being last rather than by a text-align rule). */
+/* plain flex row, no divider borders — the text is centered */
 .dividerRow {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 

@@ -74,6 +74,8 @@
    extends the page), so ScrollTrigger's wrapper never sits between React and
    the <section> it manages */
 .pinInner {
+  /* .app adds 1.5rem of padding top and bottom, so this runs 3rem past the
+     screen — a little extra scroll room below the hero */
   height: 100vh;
   min-height: 600px;
   display: flex;

@@ -28,8 +28,8 @@ export default function Home() {
     return res;
   }, [posts, query, sort]);
 
-  if (loading) return <h2>Loading posts...</h2>;
-  if (!posts.length) return <h2></h2>;
+  if (loading) return null;
+  if (!posts.length) return null;
 
   return (
     <div>

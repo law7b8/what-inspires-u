@@ -9,8 +9,16 @@
   background: var(--wiy-surface, #ffffff);
   border-radius: 10px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
-  overflow: hidden; /* clips the titlebar's top corners to the window's own radius */
+  overflow: hidden; /* clips the titlebar's top corners to the window's own radius; also what makes the native resize handle work */
   user-select: none;
+  /* every window is resizable from its bottom-right corner */
+  resize: both;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  min-height: 90px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
 }
 
 .titlebar {
@@ -29,6 +37,10 @@
 
 .titlebar:active {
   cursor: grabbing;
+}
+
+.spacer {
+  flex: 1;
 }
 
 .titleText {
@@ -60,6 +72,9 @@
 }
 
 .body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   padding: 12px;
   background: var(--wiy-surface, #ffffff);
   color: var(--wiy-ink, #14212b);
@@ -112,7 +127,110 @@
 }
 
 @media (max-width: 480px) {
-  .window {
+  .window,
+  .imgWindow {
     width: calc(100vw - 32px);
   }
+}
+
+/* embeds fill the window when it's resized */
+.embedWrap iframe {
+  min-height: 120px;
+}
+
+/* ─── img windows: the picture is the window ─────────────────
+   Opens at 2.5x the normal window width, no padding/border/radius around
+   the image, and a clear (translucent glass) top bar carrying the file
+   name, a context dropdown arrow, and the close button. */
+.imgWindow {
+  width: 700px; /* 2.5 x 280px */
+  resize: none; /* scale-only resizing via .resizeHandle instead */
+  min-height: 0;
+  max-height: none;
+  display: block;
+  border: 1px solid #ffffff;
+  border-radius: 5px; /* same as the floating file thumbnails (Mp3File.module.css .thumb) */
+  background: #000000;
+  position: fixed;
+}
+
+.imgWindow .titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: rgba(60, 60, 60, 0.55); /* grey tint, image still shows through */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); /* keeps the name legible over any picture */
+  justify-content: flex-start;
+}
+
+.imgWindow .body {
+  padding: 0;
+  overflow: hidden;
+  background: #000000;
+}
+
+.imgWindow .bigImg {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  border-radius: 0;
+}
+
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  z-index: 3;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0.85) 60%, transparent 60%, transparent 72%, rgba(255, 255, 255, 0.85) 72%, rgba(255, 255, 255, 0.85) 82%, transparent 82%);
+}
+
+.contextBtn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.25s ease;
+}
+
+.contextBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.contextBtnOpen {
+  transform: rotate(180deg);
+}
+
+.contextDrop {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  max-height: 50%;
+  overflow: auto;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #ffffff;
+  background: rgba(20, 24, 30, 0.6);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  white-space: pre-wrap;
+  user-select: text;
 }

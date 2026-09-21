@@ -8,14 +8,6 @@ export default function Header() {
                 persistent, always-visible floating button there instead of
                 a header element that only appeared after the intro's
                 pop-in reveal. */}
-            <div className={styles.topbar}>
-
-                <div className={styles.topbarRight}>
-                    <span></span>
-                    <span className={styles.issue}></span>
-                </div>
-            </div>
-
             <div className={styles.main}>
                 <div className={styles.left}>
                     <span className={styles.label}></span>
