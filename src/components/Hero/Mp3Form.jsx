@@ -80,7 +80,7 @@ export default function Mp3Form({ className = '', onLaunch, onCancel }) {
                 {track ? (
                     <DragToLaunch
                         className="btn btn-success"
-                        label="drag to place"
+                        label="Post"
                         onDrop={launch}
                     >
                         <Mp3File cover={track.cover} source={track.source} fileName={fileName} />

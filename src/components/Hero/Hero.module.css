@@ -26,6 +26,16 @@
   max-width: 220px;
   height: auto;
   pointer-events: none;
+  transform-origin: top left;
+  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* PlusMenu sets data-options-open on <html> while the options are out —
+   the title card swells a touch and the scene behind it (see .floatCase and
+   LogoDisc's .ambientFloat) recedes. `scale` (the individual property), not
+   `transform`, so it composes with GSAP/keyframe-owned transforms. */
+:global(html[data-options-open]) .titleCardImg {
+  scale: 1.07;
 }
 
 @media (max-width: 768px) {
@@ -112,6 +122,15 @@
    so this bob composes with the scroll timeline instead of fighting it. */
 .floatCase {
   animation: floatBob 20s ease-in-out infinite;
+  transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
+}
+
+/* pushed very slightly back on the z-axis while the options menu is open:
+   a hair smaller, dimmer and softer, all easing back when it closes */
+:global(html[data-options-open]) .floatCase {
+  scale: 0.965;
+  opacity: 0.88;
+  filter: blur(0.8px);
 }
 
 @keyframes floatBob {

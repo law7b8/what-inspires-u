@@ -59,13 +59,14 @@
   color-scheme: light;
 
   /* ── SEEDS — the handful of values actually worth hand-tuning ── */
-  --wiy-seed-bg: #faf7fb;       /* near-white, the faintest warm lavender-pink cast */
+  --wiy-seed-bg: #eeecef;       /* slightly greyed near-white, faint lavender cast */
   --wiy-seed-ink: #3a2e3c;      /* muted dark plum — legible on white, warmer than plain black/navy */
   --wiy-seed-accent: #b98bab;   /* muted rose-mauve — the "purple pink muted" accent */
   --wiy-seed-wave: #caa0c9;     /* soft orchid-pink; the 5 wave ribbons are generated from this */
   --wiy-seed-dark: var(--wiy-seed-ink); /* frosted-panel base — the page is light, so panels borrow the dark ink tone */
 
   /* ── A. Page ── */
+  --wiy-bg-gradient: linear-gradient(to bottom, #748a88 0%, #ffffff 20%, #ffffff 75%, #748a88 100%); /* page backdrop, top to bottom */
   --wiy-bg: var(--wiy-seed-bg);          /* solid now, not the earlier transparent experiment — an actual white/airy page, not a canvas-shows-through hack */
   --wiy-surface: color-mix(in srgb, var(--wiy-seed-bg) 70%, white 30%);          /* whiter still, for cards/panels */
   --wiy-surface-alt: color-mix(in srgb, var(--wiy-seed-bg) 90%, var(--wiy-seed-wave) 10%); /* same airy white, a whisper of the pink-purple hue */

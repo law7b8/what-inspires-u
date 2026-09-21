@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import dragIcon from '../../pages/CreatePost/dragIcon.png';
 import styles from './DragToLaunch.module.css';
 
 // Replaces a plain "shoot into hero" submit button on both ImgForm and
@@ -76,6 +77,7 @@ export default function DragToLaunch({ children, label, disabled, onDrop, classN
                 onPointerCancel={endDrag}
                 onClick={onClick}
             >
+                <img src={dragIcon} alt="" aria-hidden="true" draggable={false} className={styles.icon} />
                 {label}
             </button>
             {dragging && createPortal(

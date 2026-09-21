@@ -28,9 +28,9 @@
      text on it was close to unreadable. Everything here reads dark-on-
      light now, matching the site's own light theme instead of the
      leftover dark-glass PS3/XMB look from before that redesign. */
-  --xmb-text: #1a1a1a;
-  --xmb-text-dim: rgba(0, 0, 0, 0.7);
-  --mac-glass: var(--wiy-glass, rgb(253, 252, 252)); /* smoked glass */
+  --xmb-text: var(--wiy-menu-text, #ffffff);
+  --xmb-text-dim: rgba(255, 255, 255, 0.85);
+  --mac-glass: var(--wiy-glass, rgba(30, 24, 34, 0.7)); /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
@@ -44,7 +44,7 @@
   --opt-letter-spacing: 0.06em;
   --opt-color: var(--xmb-text);
   --opt-bg: var(--mac-glass);
-  --opt-hover-color: #000000;
+  --opt-hover-color: var(--wiy-menu-text-hover, #ffffff);
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
   --opt-radius: 0px;
@@ -61,7 +61,7 @@
   --sheet-width: 340px;
   --sheet-gap: 20px;        /* space between the option and where the sheet emerges */
   --sheet-radius: 0px;
-  --sheet-bg: var(--wiy-sheet-bg, rgba(255, 255, 255, 0.88)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
+  --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
   --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
   --titlebar-height: 40px;
@@ -117,7 +117,12 @@
   border: none;
   cursor: pointer;
   overflow: hidden; /* clips the image to this square, whatever its own shape */
-  transition: transform 0.2s ease;
+  transform-origin: top right;
+  transition: transform 0.2s ease, scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toggle[data-open] {
+  scale: 1.07;
 }
 
 .toggleImg {
@@ -153,6 +158,13 @@
   flex-direction: column;
   align-items: stretch; /* every option the same width as the widest one */
   gap: var(--opt-gap);
+  transform-origin: top right;
+  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* options pop out a touch while the menu is open */
+.menu:has(.toggle[data-open]) .list {
+  scale: 1.04;
 }
 
 .item {
@@ -180,7 +192,7 @@
   box-sizing: border-box;
   font-family: var(--opt-font);
   font-size: var(--opt-font-size);
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: var(--opt-letter-spacing);
   text-align: center;
   color: var(--opt-color);
@@ -259,7 +271,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 8px 0 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .titleText {
@@ -289,14 +301,14 @@
 }
 
 .close:hover {
-  color: #000000;
-  background: rgba(0, 0, 0, 0.08);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .sheetBody {
   padding: 16px;
   overflow-y: auto;
-  color-scheme: light; /* light scrollbars, matching the now-light sheet */
+  color-scheme: dark; /* dark scrollbars, matching the dark sheet */
   /* later options start lower down, so each step loses a bit of height */
   max-height: calc(var(--sheet-max-height) - var(--i) * 50px - var(--titlebar-height));
 }
@@ -330,19 +342,19 @@
   font-family: var(--mac-font);
   font-size: var(--menu-font-size);
   color: var(--xmb-text);
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 0;
 }
 
 .sheetBody input::placeholder,
 .sheetBody textarea::placeholder {
-  color: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .sheetBody input:focus,
 .sheetBody textarea:focus {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.16);
   border-color: rgba(var(--xmb-glow), 0.9);
   box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.4);
 }
@@ -358,27 +370,27 @@
   letter-spacing: 0.06em;
   padding: 5px 14px;
   color: var(--xmb-text);
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0;
   cursor: pointer;
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sheetBody button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.35);
 }
 
 /* primary (submit) — the glowing default button */
 .sheetBody button[type='submit'] {
-  background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(var(--xmb-glow), 0.45));
-  border-color: rgba(0, 0, 0, 0.25);
+  background: linear-gradient(rgba(255, 255, 255, 0.25), rgba(var(--xmb-glow), 0.45));
+  border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 14px rgba(var(--xmb-glow), 0.4);
 }
 
 .sheetBody button[type='submit']:hover:not(:disabled) {
-  background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(var(--xmb-glow), 0.6));
+  background: linear-gradient(rgba(255, 255, 255, 0.35), rgba(var(--xmb-glow), 0.6));
   box-shadow: 0 0 20px rgba(var(--xmb-glow), 0.6);
 }
 
@@ -389,7 +401,7 @@
 
 /* Mp3Form's error line — a saturated dark red reads clearly on this now-light sheet */
 .sheetBody [role='alert'] {
-  color: #c0242b;
+  color: #ff8a8f;
 }
 
 /* ─── responsive ─────────────────────────────────────────── */

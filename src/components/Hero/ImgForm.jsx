@@ -102,7 +102,7 @@ export default function ImgForm({ className = '', onLaunch, onCancel }) {
             <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <DragToLaunch
                     className="btn btn-success"
-                    label="drag to place"
+                    label="Post"
                     disabled={!canLaunch}
                     onDrop={launch}
                 >

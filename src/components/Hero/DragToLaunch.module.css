@@ -1,6 +1,16 @@
 .handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   touch-action: none; /* pointer events drive the drag directly; no native touch-scroll/zoom fighting it */
   cursor: grab;
+}
+
+.icon {
+  height: 1.25em;
+  width: auto;
+  pointer-events: none;
+  filter: invert(1);
 }
 
 .handle:active {

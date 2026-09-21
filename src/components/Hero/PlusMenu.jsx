@@ -73,6 +73,15 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
         firstRun.current = false;
     }, [sheet]);
 
+    // flag <html> while the menu is out so the title card/scene can react
+    // (enlarge / recede) from their own CSS — cleared on close and unmount
+    useEffect(() => {
+        const root = document.documentElement;
+        if (open) root.setAttribute('data-options-open', '');
+        else root.removeAttribute('data-options-open');
+        return () => root.removeAttribute('data-options-open');
+    }, [open]);
+
     // closing the menu closes the sheet too, and resets the highlight back
     // to the top for next time it opens
     useEffect(() => {

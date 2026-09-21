@@ -29,9 +29,9 @@ export default function IntroOverlay() {
             { autoAlpha: 1, backdropFilter: 'blur(428px)', WebkitBackdropFilter: 'blur(528px)' },
             {
                 autoAlpha: 0,
-                backdropFilter: 'blur(70px)',
-                WebkitBackdropFilter: 'blur(120px)',
-                duration: 7.6,
+                backdropFilter: 'blur(0px)',
+                WebkitBackdropFilter: 'blur0px)',
+                duration: 1.5,
                 delay: 0.15,
                 ease: 'power2.out',
             },
