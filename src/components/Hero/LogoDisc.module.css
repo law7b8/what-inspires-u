@@ -18,6 +18,14 @@
   pointer-events: none;
   animation: floatBob 16s ease-in-out infinite;
   animation-delay: -2.6s;
+  transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
+}
+
+/* recedes slightly while PlusMenu's options are open (see Hero.module.css) */
+:global(html[data-options-open]) .ambientFloat {
+  scale: 0.965;
+  opacity: 0.88;
+  filter: blur(0.8px);
 }
 
 @keyframes floatBob {
@@ -75,12 +83,12 @@
    static Z offset, same real-depth approach as CaseDisc's discCaseGroup. */
 .ambientGroup {
   position: absolute;
-  /* was top: 52%; left: 51.5% — a small deliberate-looking nudge off
-     dead-center. Back to exact 50%/50% + the translate(-50%, -50%)
-     counter-offset, so it centers on .ambientParallax's own middle
-     (which .ambientFloat above now also centers on the true viewport). */
-  top: 57%;
-  left: 52%;
+  /* nudged a little further left of center (52% → 47%) — OptionsMenu's
+     orbit tracks this element's live position every frame (see
+     OptionsMenu.jsx), so shifting the logo carries the orbiting text
+     along with it automatically, no separate change needed there. */
+  top: 56%;
+  left: 45%;
   transform: translate(-50%, -50%);
   width: 450px;
   height: 450px;
@@ -88,6 +96,7 @@
   mix-blend-mode: var(--wiy-logo-blend, multiply);
   will-change: transform, opacity;
   transform-style: preserve-3d;
+  opacity: 0.4;
 }
 
 .ambient {

@@ -39,7 +39,13 @@ function parse(source, data) {
         artist = '';
     }
 
-    return { artist, title, cover: data.thumbnail_url || '', source };
+    // oEmbed's whole point is providing ready-to-insert embeddable HTML —
+    // an <iframe> from the source service itself, complete with real
+    // playback controls. Safe to trust here specifically because it only
+    // ever comes from one of the 3 hardcoded ENDPOINTS above (never an
+    // arbitrary URL the visitor could smuggle in) and is rendered nowhere
+    // but the file's own "open" window.
+    return { artist, title, cover: data.thumbnail_url || '', source, embed: data.html || '' };
 }
 
 export async function lookupTrack(rawUrl) {

@@ -1,36 +1,27 @@
 /* ─── options (left column) ──────────────────────────────── */
 
-/* outer wrapper — carries the static anchor position (left/top) and gets
-   its x/y translated every frame in OptionsMenu.jsx to orbit the ambient
-   logo's live on-screen position. Kept separate from .options below so
-   that orbit translate never fights Hero's shared scroll timeline's own
-   x tween on .options — same "different element for different property"
-   pattern used throughout this component set (e.g. LogoDisc's
-   .ambientParallax vs. .ambientGroup). */
-.optionsOrbit {
+/* .options is the plain layout/fade wrapper. Each line's own wrapper
+   (.topbarOrbit / .titleOrbit) carries the off-screen anchor position and
+   gets its own independent x/y set every frame in OptionsMenu.jsx,
+   orbiting the ambient logo's live on-screen position at its own
+   radius/speed/phase — kept as separate elements from the actual
+   link/text inside so that orbit translate never fights anything else,
+   same "different element for different property" pattern used throughout
+   this component set (e.g. LogoDisc's .ambientParallax vs. .ambientGroup).
+   No self-spin on either line — they stay upright while they orbit. */
+.options {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topbarOrbit,
+.titleOrbit {
   position: absolute;
   left: -90em;
   top: -10%;
   will-change: transform;
-}
-
-.options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  will-change: transform;
-  /* always visible — deliberately untouched by Hero's + button, which
-     controls its own separate postHud popup instead. Spins continuously
-     on X — perpendicular to the ambient logo's own Y-axis rotation (see
-     optionsTumble in OptionsMenu.jsx). No filter on this element, so
-     backface-visibility: hidden here is safe from the filter +
-     backface-visibility Chromium/WebKit bug fixed elsewhere in this
-     component set — this just makes the text fade out of view for the
-     far half of each rotation instead of showing it mirrored/backwards,
-     since .options has no separate "back" layer the way the case/logo
-     do. */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 /* ─── title ─────────────────────────────────────────────── */
@@ -44,18 +35,36 @@
 }
 
 .title {
-  font-size: 70px;
+  font-size: 24px;
   font-weight: 500;
-  letter-spacing: -0.09em;
+  letter-spacing: -0.04em;
   line-height: 0.95;
   /* hardcoded white, not var(--wiy-ink) — --wiy-ink flips to dark navy
      under the paper theme (it's the general body-text color), which would
      make this unreadable against the dark PS3 wave background both themes
      now share. This text stays white regardless of theme. */
   color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   text-transform: lowercase;
   white-space: nowrap;
   margin: 0;
+  display: inline-block;
+  padding: 4px 16px;
+  /* border/background stay transparent until data-has-text is set (see
+     OptionsMenu.jsx's typeInto/untypeFrom) — otherwise this shows as a
+     bare empty grey box the whole time the OTHER line is typing instead
+     of only appearing alongside actual text. Transparent, not none, so
+     toggling it doesn't shift the layout by the border's own width. */
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.title[data-has-text] {
+  /* opaque border + a dark backing fill — a faint translucent border alone
+     was nearly invisible against the site's now mostly-white/airy page;
+     this stays visible against light or dark backgrounds alike. */
+  border-color: #ffffff;
 }
 
 /* blinking caret shown only while .options carries data-typing — see the
@@ -96,10 +105,20 @@
 
 .topbarLink {
   color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   text-decoration: none;
-  font-size: 70px;
+  font-size: 22px;
   font-weight: 500;
-  letter-spacing: -0.09em;
+  letter-spacing: -0.04em;
+  display: inline-block;
+  padding: 4px 16px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.topbarLink[data-has-text] {
+  border-color: #ffffff;
 }
 
 .topbarLink:hover {
@@ -111,7 +130,8 @@
 @media (max-width: 768px) {
   /* on small screens the orbit doesn't have room to run — collapse back
      to a normal, static, in-flow block above the case instead. */
-  .optionsOrbit {
+  .topbarOrbit,
+  .titleOrbit {
     position: static;
     transform: none;
   }

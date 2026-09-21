@@ -1,67 +1,88 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CaseDisc from './CaseDisc';
 import LogoDisc from './LogoDisc';
 import OptionsMenu from './OptionsMenu';
 import PlusMenu from './PlusMenu';
 import FloatingFiles from './FloatingFiles';
+import FileWindow from './FileWindow';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
 import styles from './Hero.module.css';
 
-gsap.registerPlugin(ScrollTrigger);
-
-const MAX_MP3_FILES = 8;
-
-// where the disc parks once it becomes the background watermark — also
-// duplicated (as a trivial one-liner) in LogoDisc.jsx, which needs the
-// same values for its own reduced-motion parked state.
-const restX = () => window.innerWidth * 0.15;
-const restY = () => -window.innerHeight * -0.08;
+const MAX_FLOATING_FILES = 8;
+const MAX_OPEN_WINDOWS = 4;
 
 // Hero is now the orchestrator, not the owner, of the case/logo/options
 // blocks — each of those is its own self-contained component
 // (CaseDisc/LogoDisc/OptionsMenu/SideImage), with its own refs, its own
 // perpetual tumble, its own reduced-motion handling. What's left here is
-// only what genuinely has to stay centralized: the one shared scroll
-// timeline that flies all three apart together in the same scroll-scrubbed
-// beat, and the mouse-speed spin boost, which needs to hit-test against
-// multiple components' elements to decide which one(s) to spin up. Both
-// reach into the child components via the small imperative handles each
-// one exposes (a couple of raw refs + a boostSpin function) rather than
-// owning those elements directly.
+// only what genuinely has to stay centralized: the mouse-speed spin boost,
+// which needs to hit-test against multiple components' elements to decide
+// which one(s) to spin up, plus a plain scroll-velocity listener that
+// boosts the logo's spin the same way. No more scroll-triggered pin/fly-
+// apart at all — everything just sits in place; scrolling only ever makes
+// the logo spin faster, it never moves anything or hijacks the page's own
+// scroll distance. Reaches into the child components via the small
+// imperative handles each one exposes (a couple of raw refs + a boostSpin
+// function) rather than owning those elements directly.
 export default function Hero() {
-    const heroRef = useRef(null);
-    const pinRef = useRef(null);
     const caseWrapRef = useRef(null);
-    const hintRef = useRef(null);
 
-    // .mp3 files launched from the + menu, oldest dropped past the cap so the
-    // hero doesn't fill up. In-memory only — they don't survive a reload.
-    const [mp3Files, setMp3Files] = useState([]);
-    const launchMp3 = (track, origin) => {
-        setMp3Files((files) => [...files, { ...track, origin, id: crypto.randomUUID() }].slice(-MAX_MP3_FILES));
+    // .mp3/.img files launched from the + menu — one shared pool, kind-
+    // tagged per file so FloatingFiles can render (and bounce) both
+    // together, oldest dropped past the cap so the hero doesn't fill up.
+    // In-memory only — they don't survive a reload.
+    const [floatingFiles, setFloatingFiles] = useState([]);
+    const launchFile = (kind, payload, origin) => {
+        setFloatingFiles((files) => [...files, { ...payload, kind, origin, id: crypto.randomUUID() }].slice(-MAX_FLOATING_FILES));
     };
+    const launchMp3 = (track, origin) => launchFile('mp3', track, origin);
+    const launchImg = (file, origin) => launchFile('img', file, origin);
+
+    // windows opened by clicking a floating file — a snapshot of that
+    // file's own data (not a live reference into floatingFiles, which can
+    // evict older entries past MAX_FLOATING_FILES while its window stays
+    // open), positioned in a small cascade near the top-right corner so
+    // several opened in a row don't land exactly on top of each other.
+    // nextZRef is a plain incrementing counter, not React state — it only
+    // ever needs to hand out the next-highest z-index, never trigger a
+    // render on its own.
+    const [openWindows, setOpenWindows] = useState([]);
+    const nextZRef = useRef(10);
+
+    const openFileWindow = (file) => {
+        setOpenWindows((wins) => {
+            if (wins.some((w) => w.id === file.id)) {
+                // already open — bring it to front instead of duplicating
+                return wins.map((w) => (w.id === file.id ? { ...w, z: nextZRef.current++ } : w));
+            }
+            const slot = wins.length % MAX_OPEN_WINDOWS;
+            const spawned = {
+                ...file,
+                x: window.innerWidth - 312 - slot * 28,
+                y: 96 + slot * 28,
+                z: nextZRef.current++,
+            };
+            return [...wins, spawned].slice(-MAX_OPEN_WINDOWS);
+        });
+    };
+    const closeFileWindow = (id) => setOpenWindows((wins) => wins.filter((w) => w.id !== id));
+    const focusFileWindow = (id) => setOpenWindows((wins) => wins.map((w) => (w.id === id ? { ...w, z: nextZRef.current++ } : w)));
 
     const caseDiscRef = useRef(null);    // CaseDisc's imperative handle: { discRef, imgGroupRef, boostSpin }
     const logoDiscRef = useRef(null);    // LogoDisc's imperative handle: { groupRef, boostSpin }
-    const optionsMenuRef = useRef(null); // OptionsMenu's imperative handle: { elRef }
 
     useEffect(() => {
-        const hero = heroRef.current;
-        const pinEl = pinRef.current;
-        if (!hero || !pinEl) return;
-
         const ctx = gsap.context(() => {
             const mm = gsap.matchMedia();
 
-            // ── full experience — the pin/scroll-hijack, the mouse
-            // features, and the header handoff only ever exist under this
-            // branch, matching the original design: under reduced motion
-            // there's no scroll-triggered fly-apart at all, and each child
-            // component already falls back to its own static/slow-idle
-            // state on its own (see CaseDisc/LogoDisc/OptionsMenu), so
+            // ── full experience — the mouse features (parallax, mouse-
+            // speed spin) and the scroll-speed spin boost only exist under
+            // this branch, matching the original design: under reduced
+            // motion there's none of that, and each child component
+            // already falls back to its own static/slow-idle state on its
+            // own (see CaseDisc/LogoDisc/OptionsMenu), so
             // Hero itself has nothing left to do in a 'reduce' branch.
             mm.add('(prefers-reduced-motion: no-preference)', () => {
                 gsap.set(caseWrapRef.current, { transformPerspective: 900 });
@@ -149,178 +170,36 @@ export default function Hero() {
                 }
                 window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-                // makes scrolling itself visibly spin the logo faster —
-                // routes through the same boostSpin LogoDisc exposes, so
-                // scroll and cursor speed never fight over its tumble's
-                // timeScale directly; they just both nudge the one
-                // booster LogoDisc owns internally.
-                function boostSpinFromScroll(velocity) {
-                    if (logoDiscRef.current) {
+                // makes scrolling itself visibly spin the logo faster — a
+                // plain native scroll listener computing velocity by hand
+                // (no ScrollTrigger, no pin — that's the whole point: this
+                // never moves or hijacks anything, it only ever reads how
+                // fast the page is scrolling). Routes through the same
+                // boostSpin LogoDisc exposes, so scroll and cursor speed
+                // never fight over its tumble's timeScale directly; they
+                // just both nudge the one booster LogoDisc owns internally.
+                let lastScrollY = window.scrollY;
+                let lastScrollTime = performance.now();
+                function handleScroll() {
+                    const now = performance.now();
+                    const dt = now - lastScrollTime;
+                    if (dt > 0 && logoDiscRef.current) {
+                        const velocity = (window.scrollY - lastScrollY) / (dt / 1000); // px/s
                         logoDiscRef.current.boostSpin(gsap.utils.clamp(0, 6, Math.abs(velocity) / 500));
                     }
+                    lastScrollY = window.scrollY;
+                    lastScrollTime = now;
                 }
-
-                // hands the reveal off to the Header once the disc's
-                // scroll animation is fully done — the ids are Header's
-                // own hooks for this (see the comment in App.jsx).
-                // #header-logo is deliberately NOT part of this handoff:
-                // it's a second, separate spinning disc (logo.jpeg, its
-                // own CSS spin) that duplicated the Hero's own tempo-logo
-                // watermark once revealed. LogoDisc's own disc IS the one
-                // that's supposed to carry through into the page below —
-                // it's already position:fixed and keeps tumbling the
-                // whole time, so it doesn't need a separate reveal at
-                // all. header-logo stays hidden at its default opacity: 0
-                // (Header.jsx). "header-share" (the + button) used to be
-                // part of this group too, but it's now its own
-                // persistent, always-visible fixed button rendered in
-                // Hero itself (see .shareFab below) rather than something
-                // that waits for the pop-in reveal.
-                const headerPopEls = ['header-title', 'header-tmp3o']
-                    .map((id) => document.getElementById(id))
-                    .filter(Boolean);
-
-                if (headerPopEls.length) {
-                    gsap.set(headerPopEls, { opacity: 0, scale: 0.85, transformOrigin: '50% 50%' });
-                }
-
-                function popInHeader() {
-                    if (headerPopEls.length) {
-                        gsap.to(headerPopEls, {
-                            opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.8)', stagger: 0.05,
-                        });
-                    }
-                }
-                function hideHeaderAgain() {
-                    if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 0, scale: 0.85 });
-                }
-
-                // act timings, as fractions of the timeline below — named
-                // so act 1's length, act 2's start/length, and the total
-                // all stay obviously in sync instead of relying on magic
-                // numbers that happen to add up. ACT2_START/ACT2_DURATION
-                // are chosen so ACT2 finishes exactly at the timeline's
-                // own total duration: there's no extra runway of scroll
-                // after the disc lands where nothing is visibly changing
-                // (that dead stretch was the "have to scroll more to get
-                // it" gap).
-                const ACT1_DURATION = 0.05;
-                const ACT2_START = 0.0;
-                const ACT2_DURATION = 0.10;
-                const ACT2_END = ACT2_START + ACT2_DURATION;
-
-                const tl = gsap.timeline({
-                    defaults: { ease: 'none' },
-                    scrollTrigger: {
-                        trigger: hero,
-                        start: 'top top',
-                        // ScrollTrigger always maps scroll progress 0→1
-                        // onto the timeline's own duration (ACT2_END) no
-                        // matter what physical distance is set here — so
-                        // bigger number here = less visual change per
-                        // pixel scrolled = slower, more gradual feel;
-                        // smaller = faster/snappier.
-                        end: () => '+=' + Math.round(window.innerHeight * 0.5),
-                        // pin an inner element (not the <section> React
-                        // owns) so the pin-spacer wrapper never fights
-                        // React on unmount
-                        pin: pinEl,
-                        pinSpacing: true,
-                        scrub: 0.3,
-                        invalidateOnRefresh: true,
-                        // once the user stops scrolling mid-transition,
-                        // ease the rest of the way to whichever end (hero
-                        // or page) is closer
-                        snap: {
-                            snapTo: [0, 1],
-                            duration: { min: 0.1, max: 0.3 },
-                            ease: 'power1.inOut',
-                        },
-                        // ties the disc's spin rate to how fast you're
-                        // scrolling
-                        onUpdate: (self) => boostSpinFromScroll(self.getVelocity()),
-                    },
-                });
-
-                const caseImgGroupEl = caseDiscRef.current.imgGroupRef.current;
-                const discEl = caseDiscRef.current.discRef.current;
-                const optionsEl = optionsMenuRef.current.elRef.current;
-                const logoEl = logoDiscRef.current.groupRef.current;
-
-                tl
-                    // act 1 — the case opens and drops away in 3D. Opacity
-                    // is faded ONLY here, on the outermost wrapper —
-                    // caseImgGroupEl and discEl are both descendants of
-                    // caseWrapRef, and nested opacities multiply. Fading
-                    // opacity once at this level fades the whole case —
-                    // front and back layers together — at the same
-                    // visible rate, so the shadow layer stays through the
-                    // full fly-apart instead of vanishing early.
-                    .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0, duration: ACT1_DURATION }, 0)
-                    .to(caseImgGroupEl, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
-                    .to(discEl, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
-                    .to(optionsEl, { x: 0, opacity: 0, duration: ACT1_DURATION }, 0)
-                    .to(hintRef.current, { opacity: 0, duration: 0.08 }, 0)
-                    // the ambient logo gets the same fly-out-and-fade
-                    // treatment as the case above — shrinks, recedes, and
-                    // fades to nothing right alongside it. Act 2 below
-                    // then brings it back from that vanished state to
-                    // parked-watermark — a full re-emergence, the "coming
-                    // forward out of the depths" counterpart to the case
-                    // flying away. Rotation is deliberately left alone —
-                    // LogoDisc's own tumble already owns rotationX/Y/Z on
-                    // this element continuously; adding more rotation
-                    // here would fight it for the same properties.
-                    .to(logoEl, { scale: 0.4, opacity: 0, z: -380, duration: ACT1_DURATION }, 0)
-                    // act 2 — the ambient logo eases into its parked
-                    // position. Its onComplete/onReverseComplete — not
-                    // ScrollTrigger's own onLeave/onEnterBack — are what
-                    // reveal/hide the header's tmp3o.com + WHAT INSPIRES
-                    // U. onLeave fires off the *raw* scroll position,
-                    // which (with scrub smoothing lag) can land well
-                    // before or after this tween has actually finished
-                    // animating; tying the reveal to this tween's own
-                    // completion means the header always pops in at the
-                    // exact moment the disc visually finishes arriving.
-                    // z here continues smoothly from the -380 the tween
-                    // above left it at, and animates back toward the
-                    // viewer (60, past its resting z: 0) — the "coming
-                    // forward" counterpart to the case flying away: the
-                    // case recedes into the depth, the logo arrives out
-                    // of it. Plain .to() (no explicit "from"), so there's
-                    // no jump — it just continues from wherever act 1's
-                    // tween left z.
-                    .to(logoEl, {
-                        scale: 1.2, x: restX, y: restY, opacity: 0.16, z: 60, duration: ACT2_DURATION,
-                        onComplete: popInHeader,
-                        onReverseComplete: hideHeaderAgain,
-                    }, ACT2_START);
-
-                // sanity check for future edits to the constants above —
-                // if ACT2 no longer ends at the timeline's own duration, a
-                // dead scroll stretch (or a premature reveal) creeps back
-                // in.
-                if (Math.abs(tl.duration() - ACT2_END) > 0.001) {
-                    console.warn('Hero: ambient landing no longer matches the timeline\'s end — header reveal may drift out of sync with scroll again.');
-                }
+                window.addEventListener('scroll', handleScroll, { passive: true });
 
                 return () => {
                     window.removeEventListener('mousemove', handleMouseMove);
-                    // don't leave the Header's own elements stuck
-                    // invisible if Hero unmounts (e.g. navigating away)
-                    // before the handoff fired
-                    if (headerPopEls.length) gsap.set(headerPopEls, { opacity: 1, scale: 1 });
+                    window.removeEventListener('scroll', handleScroll);
                 };
             });
-        }, hero);
+        });
 
-        // make sure ScrollTrigger measured the pin after layout/fonts settle
-        const refresh = setTimeout(() => ScrollTrigger.refresh(), 200);
-
-        return () => {
-            clearTimeout(refresh);
-            ctx.revert();
-        };
+        return () => ctx.revert();
     }, []);
 
     return (
@@ -335,22 +214,34 @@ export default function Hero() {
                 <Footer />
             </div>
 
-            <section className={styles.hero} id="hero" ref={heroRef}>
-                <div className={styles.pinInner} ref={pinRef}>
+            <section className={styles.hero} id="hero">
+                <div className={styles.pinInner}>
 
-                    {/* + toggle, its cascading options down the left side,
-                        and the post-img fill-out sheet — all self-contained
-                        in PlusMenu. Deliberately independent of
-                        OptionsMenu (the orbiting text block). */}
-                    <PlusMenu onLaunchMp3={launchMp3} />
+                    {/* the title card group — top-left. .titleCardGroup
+                        shrinks to the image's own natural width (no
+                        explicit width set on a position: absolute block),
+                        and PlusMenu is positioned against THIS wrapper
+                        (right: 0; top: 100%) rather than .pinInner
+                        directly, so its right edge lines up with the
+                        title card's right edge exactly, whatever the
+                        image's actual rendered width turns out to be, with
+                        the + toggle and its cascading options going
+                        straight down directly underneath it. Fixed screen
+                        position, not part of .caseWrap's layout or the
+                        scroll fly-apart. */}
+                    <div className={styles.titleCardGroup}>
+                        <img src="/titlecard.png" alt="" className={styles.titleCardImg} />
+                        <PlusMenu onLaunchMp3={launchMp3} onLaunchImg={launchImg} />
+                    </div>
 
-                    {/* .mp3 files shot in from the "post mp3" sheet — they
-                        float around inside the hero's bounds. */}
-                    <FloatingFiles files={mp3Files} />
+                    {/* .mp3/.img files shot in from the sheets — one shared
+                        pool, floating and bouncing off the screen's edges
+                        together. Clicking one opens its FileWindow below. */}
+                    <FloatingFiles files={floatingFiles} onOpen={openFileWindow} />
 
                     <div className={styles.floatCase}>
                         <div className={styles.caseWrap} ref={caseWrapRef}>
-                            <OptionsMenu ref={optionsMenuRef} logoRef={logoDiscRef} />
+                            <OptionsMenu logoRef={logoDiscRef} caseRef={caseDiscRef} />
                             <SideImage />
                             <CaseDisc ref={caseDiscRef} />
                         </div>
@@ -359,6 +250,21 @@ export default function Hero() {
             </section>
 
             <LogoDisc ref={logoDiscRef} />
+
+            {/* draggable "open file" windows — outside .pinInner entirely
+                (position: fixed in FileWindow.module.css), so they're never
+                affected by the pinned section's own stacking/scroll. */}
+            {openWindows.map((w) => (
+                <FileWindow
+                    key={w.id}
+                    data={w}
+                    x={w.x}
+                    y={w.y}
+                    zIndex={w.z}
+                    onClose={() => closeFileWindow(w.id)}
+                    onFocus={() => focusFileWindow(w.id)}
+                />
+            ))}
         </>
     );
 }

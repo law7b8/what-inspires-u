@@ -1,21 +1,32 @@
 import { gsap } from 'gsap';
 
-// The CD case and the tempo logo spin as a pair: both turn on the Y axis
-// only, in the same direction, at different rates. Keeping both numbers (and
-// the direction) here means they're tuned together in one place. OptionsMenu
-// is deliberately not part of this — it keeps its own separate tumble.
-export const DISC_SPIN = {
-    direction: -1,               // -1 = negative rotation, 1 = positive
-    case: { seconds: 40 },       // seconds per full turn
-    logo: { seconds: 24 },
-};
+// The CD case and the tempo logo tumble independently — each has its own
+// direction and base speed, not a shared/paired config. Both still spin on
+// all 3 axes (X, Y, Z) via the same createTumble helper below, since that
+// mechanism (independently-repeating tweens per axis at offset periods) is
+// identical for either one — only the numbers differ.
+export const CASE_SPIN = { direction: 1, seconds: 40 };
+export const LOGO_SPIN = { direction: -1, seconds: 24 };
 
-// A forever Y-axis turn on `target`. Returns the timeline so callers can hand
-// it to createSpinBooster and kill it on cleanup. `vars` is merged into the
-// timeline config (e.g. an onUpdate).
-export function createYSpin(target, seconds, vars = {}) {
-    const sign = DISC_SPIN.direction < 0 ? '-' : '+';
-    return gsap
-        .timeline({ repeat: -1, defaults: { ease: 'none' }, ...vars })
-        .to(target, { rotationY: `${sign}=360`, duration: seconds }, 0);
+// A forever 3-axis tumble on `target`. X and Z turn at different multiples
+// of `spin.seconds` (not the same duration) — three axes finishing their
+// loops in perfect sync would look identical every single lap; offsetting
+// them makes the combined motion read as a genuine tumble rather than a
+// flat repeating pattern. Each axis is its OWN independently-repeating
+// tween (rather than three tweens sharing one repeat: -1 timeline)
+// specifically so their different periods never have to resync/seam
+// against each other — nesting mismatched-period infinite loops inside one
+// shared repeating parent would otherwise clip whichever axis hasn't
+// finished when the longest one does. The parent timeline returned here
+// never repeats itself; it doesn't need to, its children already loop
+// forever, and it exists purely as one controllable handle for
+// createSpinBooster's timeScale() and cleanup's kill(). `vars` is merged
+// into the parent's config (e.g. an onUpdate).
+export function createTumble(target, { direction, seconds }, vars = {}) {
+    const sign = direction < 0 ? '-' : '+';
+    const tl = gsap.timeline({ defaults: { ease: 'none' }, ...vars });
+    tl.to(target, { rotationY: `${sign}=360`, duration: seconds * 1.65, repeat: -1 }, 0);
+    tl.to(target, { rotationX: `${sign}=360`, duration: seconds * 2.85, repeat: -1 }, 0);
+    tl.to(target, { rotationZ: `${sign}=-360`, duration: seconds * 6.7, repeat: -1 }, 0);
+    return tl;
 }

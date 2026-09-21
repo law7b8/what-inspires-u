@@ -4,6 +4,51 @@
   position: relative;
 }
 
+/* ─── title card group ───────────────────────────────────────
+   Top-left, fixed/"hovering" screen position (position: absolute against
+   .pinInner, plain left/top, no scroll-timeline or orbit tracking
+   involved). Deliberately no explicit width — a position: absolute block
+   with no width set shrinks to fit its content (the image), so this ends
+   up exactly as wide as titlecard.png actually renders, whatever that
+   turns out to be. PlusMenu is positioned against THIS element (see
+   .menu's own right: 0; top: 100% in PlusMenu.module.css), not against
+   .pinInner directly, so its right edge lines up with the image's right
+   edge exactly and it sits straight down, directly underneath it. */
+.titleCardGroup {
+  position: absolute;
+  left: 32px;
+  top: 1%;
+  z-index: 1000;
+}
+
+.titleCardImg {
+  display: block;
+  max-width: 220px;
+  height: auto;
+  pointer-events: none;
+  transform-origin: top left;
+  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* PlusMenu sets data-options-open on <html> while the options are out —
+   the title card swells a touch and the scene behind it (see .floatCase and
+   LogoDisc's .ambientFloat) recedes. `scale` (the individual property), not
+   `transform`, so it composes with GSAP/keyframe-owned transforms. */
+:global(html[data-options-open]) .titleCardImg {
+  scale: 1.07;
+}
+
+@media (max-width: 768px) {
+  .titleCardGroup {
+    left: 12px;
+    top: 8px;
+  }
+
+  .titleCardImg {
+    max-width: 140px;
+  }
+}
+
 /* ─── fixed footer ───────────────────────────────────────────
    Pinned to the bottom of the viewport so it stays visible through
    scrolling instead of only appearing once the page scrolls all the way
@@ -15,6 +60,14 @@
   right: 0;
   z-index: 1500;
   background: transparent;
+  transition: opacity 0.3s ease;
+}
+
+/* HudControls (bottom-right corner button) sets this on <html> — fades the
+   footer out for a clean screen recording/screenshot. */
+:global(html[data-hud-hidden]) .fixedFooter {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* the actual pinned element — an inner div (kept in flow so its pin-spacer
@@ -50,6 +103,12 @@
   align-items: center;
   gap: 0;
   position: relative;
+  /* nudges the case/side-image/options group left of dead-center. Plain
+     `left` on a position: relative box, not a transform — GSAP (the
+     mouse-parallax quickTo + the scroll timeline) owns this element's
+     `transform` every frame, so a static offset has to live on a
+     different property to avoid getting overwritten each frame. */
+  left: -50px;
   will-change: transform;
   /* no CSS transition on transform here — GSAP (scroll timeline + the
      mouse-parallax quickTo in Hero.jsx) sets this element's transform
@@ -63,6 +122,15 @@
    so this bob composes with the scroll timeline instead of fighting it. */
 .floatCase {
   animation: floatBob 20s ease-in-out infinite;
+  transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
+}
+
+/* pushed very slightly back on the z-axis while the options menu is open:
+   a hair smaller, dimmer and softer, all easing back when it closes */
+:global(html[data-options-open]) .floatCase {
+  scale: 0.965;
+  opacity: 0.88;
+  filter: blur(0.8px);
 }
 
 @keyframes floatBob {
