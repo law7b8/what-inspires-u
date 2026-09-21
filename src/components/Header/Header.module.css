@@ -11,6 +11,9 @@
        gap below the header's actual (much shorter) content on every page,
        not just Home — that was the "extra room at the bottom" people were
        scrolling through. Let it size to its content instead. */
+    /* the 1000px decorative .logoBg below is absolutely positioned and
+       invisible, but still counted toward the page's scrollable height */
+    overflow: clip;
     transition: opacity 0.3s ease;
 }
 
@@ -64,7 +67,6 @@
 
 .main {
     display: grid;
-    margin-top: 150px;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
     gap: 24px;

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CaseDisc from './CaseDisc';
 import LogoDisc from './LogoDisc';
 import OptionsMenu from './OptionsMenu';
@@ -9,6 +10,13 @@ import FileWindow from './FileWindow';
 import SideImage from './SideImage';
 import Footer from '../Footer/Footer';
 import styles from './Hero.module.css';
+
+gsap.registerPlugin(ScrollTrigger);
+
+// where the logo disc parks once it has come forward — same values as
+// LogoDisc.jsx's own reduced-motion parked state
+const restX = () => window.innerWidth * 0.15;
+const restY = () => window.innerHeight * 0.08;
 
 const MAX_FLOATING_FILES = 8;
 const MAX_OPEN_WINDOWS = 4;
@@ -58,9 +66,12 @@ export default function Hero() {
                 return wins.map((w) => (w.id === file.id ? { ...w, z: nextZRef.current++ } : w));
             }
             const slot = wins.length % MAX_OPEN_WINDOWS;
+            // img windows open at 2.5x the normal 280px width (see
+            // .imgWindow in FileWindow.module.css), capped to the screen
+            const width = file.kind === 'img' ? Math.min(700, window.innerWidth - 32) : 280;
             const spawned = {
                 ...file,
-                x: window.innerWidth - 312 - slot * 28,
+                x: Math.max(16, window.innerWidth - width - 32 - slot * 28),
                 y: 96 + slot * 28,
                 z: nextZRef.current++,
             };
@@ -192,9 +203,47 @@ export default function Hero() {
                 }
                 window.addEventListener('scroll', handleScroll, { passive: true });
 
+                // ── scroll-scrubbed "disc comes forward": as the page scrolls
+                // the case recedes into the depth and the ambient logo disc
+                // eases forward out of it into its parked watermark spot.
+                // Deliberately NOT pinned — no pin-spacer, so it adds no
+                // extra scroll height; the hero just scrolls away normally
+                // while the scrub plays over the first ~40% of a viewport.
+                // Only touches scale/z/x/y/opacity; LogoDisc's and
+                // CaseDisc's own tumbles keep owning rotation.
+                const caseImgGroupEl = caseDiscRef.current?.imgGroupRef.current;
+                const discEl = caseDiscRef.current?.discRef.current;
+                const logoEl = logoDiscRef.current?.groupRef.current;
+                let tl = null;
+                if (caseImgGroupEl && discEl && logoEl) {
+                    tl = gsap.timeline({
+                        defaults: { ease: 'none' },
+                        scrollTrigger: {
+                            trigger: '#hero',
+                            start: 'top top',
+                            end: () => '+=' + Math.round(window.innerHeight * 0.4),
+                            scrub: 0.4,
+                            invalidateOnRefresh: true,
+                        },
+                    });
+                    tl
+                        .to(caseWrapRef.current, { scale: 0.85, z: -200, duration: 1 }, 0)
+                        .to(caseImgGroupEl, { z: -260, scale: 0.7, duration: 1 }, 0)
+                        .to(discEl, {
+                            x: () => window.innerWidth * 0.12, rotation: 120, rotationY: 160, scale: 1.05, z: 20, duration: 1,
+                        }, 0)
+                        .to(logoEl, {
+                            scale: 1.2, x: restX, y: restY, opacity: 0.16, z: 60, duration: 1,
+                        }, 0);
+                }
+
                 return () => {
                     window.removeEventListener('mousemove', handleMouseMove);
                     window.removeEventListener('scroll', handleScroll);
+                    if (tl) {
+                        tl.scrollTrigger?.kill();
+                        tl.kill();
+                    }
                 };
             });
         });
