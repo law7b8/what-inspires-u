@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import ImgForm from './ImgForm';
 import Mp3Form from './Mp3Form';
-import { captureCleanScreenshot } from '../../utils/screenshot';
 import styles from './PlusMenu.module.css';
 
-// Edit this list to add/remove/rename options. kind: 'sheet' (the default)
-// slides its own fill-out sheet out from behind itself, only one open at a
-// time; kind: 'action' just runs immediately on click/Enter, no sheet.
+// Edit this list to add/remove/rename options. Each one slides its own
+// fill-out sheet out from behind itself, only one open at a time.
 const OPTIONS = [
-    { id: 'post-img', label: 'post img', kind: 'sheet' },
-    { id: 'post-mp3', label: 'post mp3', kind: 'sheet' },
-    { id: 'screenshot', label: 'screenshot', kind: 'action' },
+    { id: 'post-img', label: 'post img' },
+    { id: 'post-mp3', label: 'post mp3' },
 ];
 
 const HIDDEN_Y = -40;      // px each option starts offset upward while cascading in — comes down from behind the toggle, not just a nudge
@@ -34,7 +31,6 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     // option lands back on the first, and vice versa).
     const [focusedIndex, setFocusedIndex] = useState(0);
     const wheelLockRef = useRef(false);
-    const [capturing, setCapturing] = useState(false);
 
     const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const moveFocus = (delta) => setFocusedIndex((i) => (i + delta + OPTIONS.length) % OPTIONS.length);
@@ -101,8 +97,7 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 const opt = OPTIONS[focusedIndex];
-                if (opt.kind === 'action') runScreenshot();
-                else setSheet((s) => (s === opt.id ? null : opt.id));
+                setSheet((s) => (s === opt.id ? null : opt.id));
             } else if (e.key === 'Escape') {
                 if (sheet) setSheet(null);
                 else setOpen(false);
@@ -141,26 +136,6 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
         closeSheet();
     };
 
-    // screenshot is an "action" option — no sheet, it just runs immediately.
-    // Hides this whole menu (rootRef) for the capture on top of whatever
-    // captureCleanScreenshot already hides elsewhere (Header/footer), since
-    // this menu itself is currently open/visible when you'd click this.
-    const runScreenshot = async () => {
-        if (capturing) return;
-        setCapturing(true);
-        const root = rootRef.current;
-        const prevVisibility = root.style.visibility;
-        root.style.visibility = 'hidden';
-        try {
-            await captureCleanScreenshot();
-        } catch (err) {
-            console.error('Screenshot failed:', err);
-        } finally {
-            root.style.visibility = prevVisibility;
-            setCapturing(false);
-        }
-    };
-
     return (
         <div className={styles.menu} ref={rootRef} style={{ '--count': OPTIONS.length }}>
             <button
@@ -178,7 +153,6 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             <ul className={styles.list} id="plus-menu-list">
                 {OPTIONS.map((opt, i) => {
                     const active = sheet === opt.id;
-                    const isAction = opt.kind === 'action';
                     return (
                         <li
                             key={opt.id}
@@ -192,47 +166,40 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
                                 className={`${styles.opt} ${active ? styles.optActive : ''}`}
                                 data-focused={i === focusedIndex || undefined}
                                 onMouseEnter={() => setFocusedIndex(i)}
-                                onClick={() => {
-                                    setFocusedIndex(i);
-                                    if (isAction) runScreenshot();
-                                    else setSheet(active ? null : opt.id);
-                                }}
-                                disabled={isAction && capturing}
-                                aria-expanded={isAction ? undefined : active}
-                                aria-controls={isAction ? undefined : `plus-menu-sheet-${opt.id}`}
+                                onClick={() => { setFocusedIndex(i); setSheet(active ? null : opt.id); }}
+                                aria-expanded={active}
+                                aria-controls={`plus-menu-sheet-${opt.id}`}
                             >
-                                {isAction && opt.id === 'screenshot' && capturing ? '…' : opt.label}
+                                {opt.label}
                             </button>
 
-                            {!isAction && (
-                                <div className={styles.sheetWindow}>
-                                    <div
-                                        className={styles.sheet}
-                                        id={`plus-menu-sheet-${opt.id}`}
-                                        data-sheet={opt.id}
-                                    >
-                                        <div className={styles.titlebar}>
-                                            <span className={styles.titleText}>{opt.label}</span>
-                                            <button
-                                                type="button"
-                                                className={styles.close}
-                                                onClick={closeSheet}
-                                                aria-label={`close ${opt.label}`}
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                        <div className={styles.sheetBody}>
-                                            {opt.id === 'post-img' && (
-                                                <ImgForm className={styles.sheetForm} onLaunch={handleLaunchImg} onCancel={closeSheet} />
-                                            )}
-                                            {opt.id === 'post-mp3' && (
-                                                <Mp3Form className={styles.sheetForm} onLaunch={handleLaunchMp3} onCancel={closeSheet} />
-                                            )}
-                                        </div>
+                            <div className={styles.sheetWindow}>
+                                <div
+                                    className={styles.sheet}
+                                    id={`plus-menu-sheet-${opt.id}`}
+                                    data-sheet={opt.id}
+                                >
+                                    <div className={styles.titlebar}>
+                                        <span className={styles.titleText}>{opt.label}</span>
+                                        <button
+                                            type="button"
+                                            className={styles.close}
+                                            onClick={closeSheet}
+                                            aria-label={`close ${opt.label}`}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                    <div className={styles.sheetBody}>
+                                        {opt.id === 'post-img' && (
+                                            <ImgForm className={styles.sheetForm} onLaunch={handleLaunchImg} onCancel={closeSheet} />
+                                        )}
+                                        {opt.id === 'post-mp3' && (
+                                            <Mp3Form className={styles.sheetForm} onLaunch={handleLaunchMp3} onCancel={closeSheet} />
+                                        )}
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </li>
                     );
                 })}

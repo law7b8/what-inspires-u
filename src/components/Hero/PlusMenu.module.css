@@ -23,7 +23,12 @@
   --mac-font: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   --menu-font-size: 13px;
   --xmb-glow: var(--wiy-glow, 160, 200, 255);   /* rgb of the glow — set per theme in tokens.css */
-  --xmb-text: #ffffff;
+  /* dark text, not white — --mac-glass below (the option pills' own
+     background) already resolves to near-white (253, 252, 252), so white
+     text on it was close to unreadable. Everything here reads dark-on-
+     light now, matching the site's own light theme instead of the
+     leftover dark-glass PS3/XMB look from before that redesign. */
+  --xmb-text: #1a1a1a;
   --xmb-text-dim: rgba(0, 0, 0, 0.7);
   --mac-glass: var(--wiy-glass, rgb(253, 252, 252)); /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
@@ -56,7 +61,7 @@
   --sheet-width: 340px;
   --sheet-gap: 20px;        /* space between the option and where the sheet emerges */
   --sheet-radius: 0px;
-  --sheet-bg: var(--wiy-sheet-bg, rgba(16, 20, 30, 0.5)); /* see-through, blurred behind */
+  --sheet-bg: var(--wiy-sheet-bg, rgba(255, 255, 255, 0.88)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
   --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
   --titlebar-height: 40px;
@@ -254,7 +259,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 8px 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .titleText {
@@ -285,13 +290,13 @@
 
 .close:hover {
   color: #000000;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .sheetBody {
   padding: 16px;
   overflow-y: auto;
-  color-scheme: dark; /* dark scrollbars */
+  color-scheme: light; /* light scrollbars, matching the now-light sheet */
   /* later options start lower down, so each step loses a bit of height */
   max-height: calc(var(--sheet-max-height) - var(--i) * 50px - var(--titlebar-height));
 }
@@ -325,21 +330,21 @@
   font-family: var(--mac-font);
   font-size: var(--menu-font-size);
   color: var(--xmb-text);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.22);
   border-radius: 0;
 }
 
 .sheetBody input::placeholder,
 .sheetBody textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .sheetBody input:focus,
 .sheetBody textarea:focus {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.08);
   border-color: rgba(var(--xmb-glow), 0.9);
-  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.55);
+  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.4);
 }
 
 .sheetBody textarea {
@@ -353,28 +358,28 @@
   letter-spacing: 0.06em;
   padding: 5px 14px;
   color: var(--xmb-text);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 0;
   cursor: pointer;
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sheetBody button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.45);
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 12px rgba(var(--xmb-glow), 0.35);
 }
 
 /* primary (submit) — the glowing default button */
 .sheetBody button[type='submit'] {
-  background: linear-gradient(rgba(255, 255, 255, 0.4), rgba(var(--xmb-glow), 0.35));
-  border-color: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 0 14px rgba(var(--xmb-glow), 0.45);
+  background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(var(--xmb-glow), 0.45));
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 14px rgba(var(--xmb-glow), 0.4);
 }
 
 .sheetBody button[type='submit']:hover:not(:disabled) {
-  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(var(--xmb-glow), 0.5));
-  box-shadow: 0 0 20px rgba(var(--xmb-glow), 0.75);
+  background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(var(--xmb-glow), 0.6));
+  box-shadow: 0 0 20px rgba(var(--xmb-glow), 0.6);
 }
 
 .sheetBody button:disabled {
@@ -382,9 +387,9 @@
   cursor: default;
 }
 
-/* Mp3Form's error line is dark red by default — lift it for the dark window */
+/* Mp3Form's error line — a saturated dark red reads clearly on this now-light sheet */
 .sheetBody [role='alert'] {
-  color: #ff9a9a;
+  color: #c0242b;
 }
 
 /* ─── responsive ─────────────────────────────────────────── */

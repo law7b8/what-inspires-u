@@ -130,7 +130,7 @@ export default function OptionsMenu({ logoRef, caseRef, firstText = 'tmp3o.com',
                 // (typically 60fps+). performance.now() rather than GSAP's
                 // own ticker.time, so this is a plain, unambiguous
                 // wall-clock gate independent of any GSAP internals.
-                const ORBIT_FRAME_MS = 1000 / 24;
+                const ORBIT_FRAME_MS = 1000 / 60;
                 // extra clearance added on top of half the logo↔case
                 // distance when sizing the shared orbit radius — without
                 // this, a radius of EXACTLY half that distance would just
@@ -201,7 +201,7 @@ export default function OptionsMenu({ logoRef, caseRef, firstText = 'tmp3o.com',
                 }
 
                 topbarOrbit = createOrbit(topbarOrbitRef.current, {
-                    baseRadius: 420, radiusYRatio: 0.45, offsetX: -120, duration: 26, phase: 0,
+                    baseRadius: 420, radiusYRatio: 0.45, offsetX: -220, duration: 26, phase: 0,
                 });
                 titleOrbit = createOrbit(titleOrbitRef.current, {
                     baseRadius: 300, radiusYRatio: 0.5, offsetX: -40, duration: 19, phase: Math.PI,
