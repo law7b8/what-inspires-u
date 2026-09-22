@@ -26,10 +26,6 @@ const CaseDisc = forwardRef(function CaseDisc(_props, ref) {
     }), []);
 
     useEffect(() => {
-        // matches the rest of Hero: no perpetual tumble under reduced
-        // motion, just the static artwork.
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
         const ctx = gsap.context(() => {
             gsap.set(caseImgGroupRef.current, { transformPerspective: 900 });
 

@@ -6,7 +6,7 @@ import { gsap } from 'gsap';
 // mechanism (independently-repeating tweens per axis at offset periods) is
 // identical for either one — only the numbers differ.
 export const CASE_SPIN = { direction: 1, seconds: 40 };
-export const LOGO_SPIN = { direction: -1, seconds: 24 };
+export const LOGO_SPIN = { direction: -1, seconds: 48 };
 
 // A forever 3-axis tumble on `target`. X and Z turn at different multiples
 // of `spin.seconds` (not the same duration) — three axes finishing their
