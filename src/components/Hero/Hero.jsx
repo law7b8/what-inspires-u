@@ -59,7 +59,7 @@ export default function Hero() {
     const [openWindows, setOpenWindows] = useState([]);
     const nextZRef = useRef(10);
 
-    const openFileWindow = (file) => {
+    const openFileWindow = (file, originRect) => {
         setOpenWindows((wins) => {
             if (wins.some((w) => w.id === file.id)) {
                 // already open — bring it to front instead of duplicating
@@ -74,6 +74,12 @@ export default function Hero() {
                 x: Math.max(16, window.innerWidth - width - 32 - slot * 28),
                 y: 96 + slot * 28,
                 z: nextZRef.current++,
+                // the clicked floating file's own on-screen rect (plain
+                // object — a DOMRect wouldn't survive being spread into
+                // state cleanly) — FileWindow enlarges open from here
+                origin: originRect && {
+                    left: originRect.left, top: originRect.top, width: originRect.width, height: originRect.height,
+                },
             };
             return [...wins, spawned].slice(-MAX_OPEN_WINDOWS);
         });
@@ -226,14 +232,26 @@ export default function Hero() {
                             invalidateOnRefresh: true,
                         },
                     });
+                    // x targets below are called once here, not passed as
+                    // live function references — with invalidateOnRefresh
+                    // above (needed so `end` keeps matching the viewport's
+                    // actual height), GSAP re-invokes any *function-based*
+                    // tween value on every refresh, including the resize
+                    // ones the browser fires while you're dragging its
+                    // window edge. That was recomputing these against the
+                    // window's new size mid-drag and snapping the case disc
+                    // and the logo to a different spot every time it fired.
+                    // Calling them once bakes in a plain number instead, so
+                    // only the scroll-driven scrub still moves them —
+                    // resizing the window doesn't.
                     tl
                         .to(caseWrapRef.current, { scale: 0.85, z: -200, duration: 1 }, 0)
                         .to(caseImgGroupEl, { z: -260, scale: 0.7, duration: 1 }, 0)
                         .to(discEl, {
-                            x: () => window.innerWidth * 0.12, rotation: 120, rotationY: 160, scale: 1.05, z: 20, duration: 1,
+                            x: window.innerWidth * 0.12, rotation: 120, rotationY: 160, scale: 1.05, z: 20, duration: 1,
                         }, 0)
                         .to(logoEl, {
-                            scale: 1.2, x: restX, y: restY, opacity: 0.16, z: 60, duration: 1,
+                            scale: 1.2, x: restX(), y: restY(), opacity: 0.16, z: 60, duration: 1,
                         }, 0);
                 }
 
@@ -310,6 +328,7 @@ export default function Hero() {
                     x={w.x}
                     y={w.y}
                     zIndex={w.z}
+                    origin={w.origin}
                     onClose={() => closeFileWindow(w.id)}
                     onFocus={() => focusFileWindow(w.id)}
                 />

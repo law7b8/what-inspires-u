@@ -2,8 +2,10 @@
    screen edges. NOT position: absolute — that would size this to .hero's
    own box, which is narrower than the screen because .app carries its own
    padding (1.5rem, in app.css), so files were bouncing off an invisible
-   boundary short of the actual edges. Above the case, below the + menu
-   (2000). Never blocks clicks. */
+   boundary short of the actual edges. Above the case, below the + menu and
+   its post-img/post-mp3 sheets — enforced from the other side, by
+   Hero.module.css's .titleCardGroup (PlusMenu's ancestor) using a z-index
+   above this one, not by anything set here. Never blocks clicks. */
 .layer {
   position: fixed;
   inset: 0;
@@ -30,5 +32,12 @@
   background: none;
   border: none;
   font: inherit;
-  cursor: pointer;
+  cursor: grab;
+  /* pointer events drive the hold/drag directly (see FloatingFiles.jsx) —
+     no native touch-scroll/gesture handling fighting it */
+  touch-action: none;
+}
+
+.floater:active {
+  cursor: grabbing;
 }

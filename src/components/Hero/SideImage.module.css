@@ -29,7 +29,18 @@
 
 .sideImage {
   display: block;
-  width: 1200px;
+  /* fluid — was a flat 1200px with a display: none cutoff below 1100px
+     wide (no room beside a much narrower case at that width). Replaced
+     with one continuous clamp() instead, same fluid-scaling pass as
+     Hero/CaseDisc/LogoDisc/PlusMenu: width alone (not opacity — there's
+     no clean way to derive a unitless 0–1 opacity fluidly from a vw
+     length in plain CSS, same reason .floatCase/.ambientFloat's old
+     vh-based `scale` got replaced with a sized property instead) eases
+     down to a literal 0px by 1000px wide, well short of the 1440px it
+     reaches its full 1200px at — so it's already negligible (a few px, at
+     0.4 base opacity and a 2px blur on top) anywhere near the old 1100px
+     cutoff and genuinely gone below 1000px, with nothing ever snapping. */
+  width: clamp(0px, -2727px + 272.73vw, 1200px);
   height: auto;
   /* brightness knob — override per-use with an inline style on the
      .sideImageGroup wrapper, e.g. style={{ '--side-image-brightness': 1.3 }},
@@ -57,9 +68,12 @@
   filter: blur(0.4px);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   /* same reasoning as Hero's .options going static on mobile — not enough
-     room beside a much narrower case for either side column */
+     room beside a much narrower case for either side column. Was 900px;
+     raised to also cover the 769px–1024px tablet band Hero/CaseDisc/
+     LogoDisc/PlusMenu scale down for — this 1200px-wide decorative image
+     has no comfortable room in that band either. */
   .sideImageGroup {
     display: none;
   }

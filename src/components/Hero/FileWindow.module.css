@@ -150,19 +150,47 @@
   display: block;
   border: 1px solid #ffffff;
   border-radius: 5px; /* same as the floating file thumbnails (Mp3File.module.css .thumb) */
-  background: #000000;
+  /* no background here (was #000000) — the black now lives only on .body
+     below, behind the image itself. The titlebar row has its own solid
+     grey background (see .imgWindow .titlebar), so this outer box doesn't
+     need to supply one. */
   position: fixed;
 }
 
 .imgWindow .titlebar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  background: rgba(60, 60, 60, 0.55); /* grey tint, image still shows through */
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); /* keeps the name legible over any picture */
+  /* a normal flex item above the image (the window is display: flex;
+     flex-direction: column — see .window), not laid over it — was
+     position: absolute, which stacked it on top of .imgWindow .bigImg */
+  background: #4a4a4a;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   justify-content: flex-start;
+}
+
+.imgWindow .closeBtn {
+  color: #ffffff;
+  background: transparent;
+}
+
+.imgWindow .closeBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.imgWindow .contextBtn {
+  color: #ffffff;
+  background: transparent;
+}
+
+.imgWindow .contextBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* wraps the context arrow + name as one unit — this is what slides up
+   from below on open (see the useLayoutEffect in FileWindow.jsx) */
+.label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .imgWindow .body {
@@ -178,23 +206,88 @@
   border-radius: 0;
 }
 
+/* resizable from any edge or corner (see RESIZE_HANDLES in FileWindow.jsx)
+   — only the bottom-right corner carries the visible striped grip (the
+   established affordance from before); the other 7 are plain invisible hit
+   zones that just change the cursor, same as a native OS window border. */
 .resizeHandle {
   position: absolute;
+  z-index: 3;
+  touch-action: none;
+}
+
+.resizese {
   right: 0;
   bottom: 0;
   width: 18px;
   height: 18px;
-  z-index: 3;
   cursor: nwse-resize;
-  touch-action: none;
-  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0.85) 60%, transparent 60%, transparent 72%, rgba(255, 255, 255, 0.85) 72%, rgba(255, 255, 255, 0.85) 82%, transparent 82%);
+  /* was a visible white diagonal-stripe grip — now a plain invisible hit
+     zone, same as the other 7 handles, just the resize cursor on hover */
+  background: transparent;
+}
+
+.resizenw {
+  top: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.resizene {
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
+}
+
+.resizesw {
+  bottom: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
+}
+
+.resizen {
+  top: -4px;
+  left: 12px;
+  right: 12px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.resizes {
+  bottom: -4px;
+  left: 12px;
+  right: 12px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.resizee {
+  right: -4px;
+  top: 12px;
+  bottom: 12px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.resizew {
+  left: -4px;
+  top: 12px;
+  bottom: 12px;
+  width: 8px;
+  cursor: ew-resize;
 }
 
 .contextBtn {
   flex-shrink: 0;
   width: 22px;
   height: 22px;
-  margin-left: 4px;
+  margin-right: 6px;
   display: grid;
   place-items: center;
   padding: 0;

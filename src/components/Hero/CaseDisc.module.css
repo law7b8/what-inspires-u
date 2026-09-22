@@ -1,6 +1,17 @@
 /* ─── case body ──────────────────────────────────────────── */
 
 .caseBody {
+  /* every size below (.spine's height, .disc/.discSlot, .discCaseGroup's
+     height) reads this one custom property instead of repeating its own
+     clamp() — it inherits down through all of them since they're all
+     descendants. Fluid: was a flat 500px with 2 breakpoint overrides
+     (340px tablet, 200px mobile, plus a separately-hand-tuned 260px
+     .caseBody override that didn't quite match .disc's own 200px at that
+     same breakpoint). One continuous formula now, blending a vw-based and
+     a vh-based reading (same min() shape as .titleCardImg in
+     Hero.module.css) so it shrinks smoothly by width AND by height, with
+     no jump at any specific breakpoint and no more of that mismatch. */
+  --disc-size: clamp(200px, min(100px + 27.78vw, -40px + 60vh), 500px);
   position: relative;
   display: flex;
   align-items: center;
@@ -81,7 +92,7 @@
 
 .spine {
   width: 24px;
-  height: 500px;
+  height: var(--disc-size);
   border-right: none;
   display: flex;
   align-items: center;
@@ -127,8 +138,8 @@
   position: relative;
   will-change: transform;
   flex-shrink: 0;
-  width: 500px;
-  height: 500px;
+  width: var(--disc-size);
+  height: var(--disc-size);
   /* visible, not hidden: the case image tumbles continuously in 3D
      (this component's own caseTumble), so a clipped box chops off its
      edges mid-rotation instead of just cropping the static overhang */
@@ -166,7 +177,7 @@
   top: 50%;
   left: 24%;
   transform: translate(-50%, -50%);
-  height: 500px;
+  height: var(--disc-size);
   width: 100%;
   z-index: 500;
   transform-style: preserve-3d;
@@ -229,30 +240,9 @@
   transform: rotateY(180deg);
 }
 
-@media (max-width: 768px) {
-  .caseBody {
-    width: 260px;
-    height: 260px;
-  }
-
-  .spine {
-    height: 260px;
-  }
-
-  .disc {
-    width: 200px;
-    height: 200px;
-  }
-
-  .discSlot {
-    width: 200px;
-    height: 200px;
-  }
-
-  /* .discCaseGroup's base rule hardcodes height: 500px (no override existed
-     here even before the front/back-layer refactor) — on a 200px-wide .disc
-     that left it a 200×500 box, badly oversized and shifted off-screen */
-  .discCaseGroup {
-    height: 200px;
-  }
-}
+/* no more breakpoint overrides here — .disc/.discSlot/.spine/
+   .discCaseGroup all read --disc-size above, which already scales
+   fluidly by both width and height. .discSlot's own width/height: auto
+   (its base rule) means it just tracks .disc's size automatically, so it
+   never needed an override of its own even back when these were fixed
+   breakpoint values. */

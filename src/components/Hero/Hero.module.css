@@ -16,14 +16,39 @@
    edge exactly and it sits straight down, directly underneath it. */
 .titleCardGroup {
   position: absolute;
-  left: 32px;
+  /* fluid, not a fixed 32px + a mobile-only 12px override — scales
+     continuously with viewport width instead of jumping at 768px. Anchored
+     to 12px at a 360px-wide phone and 32px at 1440px+ (the desktop value
+     this was always designed at); see the same clamp(min: A + Bvw, max)
+     shape used throughout this file/PlusMenu/CaseDisc/LogoDisc for every
+     other size that used to be breakpoint-stepped. */
+  left: clamp(12px, 5.33px + 1.85vw, 32px);
   top: 1%;
-  z-index: 1000;
+  /* was 1000, tied with FloatingFiles' own .layer (also 1000, a sibling
+     here) — a tie falls back to DOM order, and FloatingFiles is mounted
+     after this group in Hero.jsx, so the floating files were actually
+     painting on TOP of the + menu (PlusMenu, nested inside this group)
+     and its post-img/post-mp3 sheets despite PlusMenu's own .menu using
+     z-index: 2000 — that 2000 only ranks PlusMenu's own children against
+     each other; it can't outrank a sibling of THIS element, because this
+     element (position: absolute + z-index) already opened its own
+     stacking context that PlusMenu's z-index is boxed inside. Raised well
+     clear of .layer's 1000 so the group (title card + PlusMenu) always
+     wins now, unambiguously. */
+  z-index: 2500;
 }
 
 .titleCardImg {
   display: block;
-  max-width: 220px;
+  /* fluid — was a flat 220px plus 3 separate breakpoint overrides (170px
+     tablet, 150px short-height, 140px mobile), each a discrete jump as the
+     window crossed that exact width/height. One continuous formula now:
+     scales with whichever of width or height is more constrained (a
+     min() of a vw-based and a vh-based reading of the same clamp shape),
+     so it shrinks smoothly the whole way from a 360px-wide phone (or a
+     400px-tall short window) up to a 1440px/900px-tall desktop, with no
+     size ever "snapping" as the window crosses a specific breakpoint. */
+  max-width: clamp(130px, min(100px + 8.33vw, 58px + 18vh), 220px);
   height: auto;
   pointer-events: none;
   transform-origin: top left;
@@ -36,17 +61,6 @@
    `transform`, so it composes with GSAP/keyframe-owned transforms. */
 :global(html[data-options-open]) .titleCardImg {
   scale: 1.07;
-}
-
-@media (max-width: 768px) {
-  .titleCardGroup {
-    left: 12px;
-    top: 8px;
-  }
-
-  .titleCardImg {
-    max-width: 140px;
-  }
 }
 
 /* ─── fixed footer ───────────────────────────────────────────
@@ -77,7 +91,11 @@
   /* .app adds 1.5rem of padding top and bottom, so this runs 3rem past the
      screen — a little extra scroll room below the hero */
   height: 100vh;
-  min-height: 600px;
+  /* fluid — was a flat 600px, with a short-viewport media query dropping
+     it to 420px below a 700px-tall window. One clamp() instead: eases
+     from 420px at a 400px-tall window up to 600px at 700px+ tall, so nothing
+     snaps as the window is resized shorter/taller. */
+  min-height: clamp(420px, 180px + 60vh, 600px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,6 +142,14 @@
    so this bob composes with the scroll timeline instead of fighting it. */
 .floatCase {
   animation: floatBob 20s ease-in-out infinite;
+  /* used to also carry a flat scale: 0.7 below a 700px-tall window — that's
+     gone now (CSS's `scale` takes a plain unitless number, and there's no
+     clean, well-supported way to derive one fluidly from a vh length the
+     way clamp()/calc() do for actual lengths below). The short-viewport
+     shrink this was doing lives directly on CaseDisc's and LogoDisc's own
+     fluid sizes instead (their width/height formulas blend in a vh term
+     via min(), same as .titleCardImg above) — same visual result, without
+     needing a unitless-from-length conversion here. */
   transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
 }
 

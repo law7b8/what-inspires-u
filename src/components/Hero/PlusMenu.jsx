@@ -43,13 +43,16 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
         if (open) {
             gsap.to(items, {
                 autoAlpha: 1, y: 0,
-                duration: instant ? 0 : 0.5, stagger: instant ? 0 : 0.08,
-                ease: 'back.out(1.6)', overwrite: true,
+                // was 0.5s/0.08 stagger with a bigger back.out overshoot —
+                // trimmed both so the cascade reads snappier without losing
+                // the XMB "pop" on each item
+                duration: instant ? 0 : 0.4, stagger: instant ? 0 : 0.06,
+                ease: 'back.out(1.4)', overwrite: true,
             });
         } else {
             gsap.to(items, {
                 autoAlpha: 0, y: HIDDEN_Y,
-                duration: instant ? 0 : 0.22, stagger: instant ? 0 : { each: 0.04, from: 'end' },
+                duration: instant ? 0 : 0.18, stagger: instant ? 0 : { each: 0.03, from: 'end' },
                 ease: 'power2.in', overwrite: true,
             });
         }
@@ -65,8 +68,10 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             gsap.to(el, {
                 xPercent: isOpen ? 0 : SHEET_HIDDEN,
                 autoAlpha: isOpen ? 1 : 0,
-                duration: instant ? 0 : isOpen ? 0.6 : 0.35,
-                ease: isOpen ? 'power3.out' : 'power3.in',
+                // was 0.6s/0.35s with power3's long easing tail — power2
+                // gets there almost as smoothly in noticeably less time
+                duration: instant ? 0 : isOpen ? 0.45 : 0.28,
+                ease: isOpen ? 'power2.out' : 'power2.in',
                 overwrite: true,
             });
         });

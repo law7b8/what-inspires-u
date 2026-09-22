@@ -35,8 +35,12 @@
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 
-  /* ONE height for the + box and every option pill, so they always match */
-  --menu-item-height: 44px;
+  /* ONE height for the + box and every option pill, so they always match.
+     Fluid — was a flat 44px with 38px/34px/36px overrides at 3 different
+     breakpoints (mobile width, small-phone width, short height). One
+     continuous formula instead, blending a vw-based and a vh-based
+     reading so it scales smoothly with either. */
+  --menu-item-height: clamp(34px, min(30.67px + 0.926vw, 26px + 2vh), 44px);
 
   /* options */
   --opt-font: var(--mac-font);
@@ -48,24 +52,48 @@
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
   --opt-radius: 0px;
-  --opt-pad-x: 12px; /* auto = same width for all options, based on the widest one */
+  /* fluid — was a flat 12px that bumped up to 18px at ≤768px then back
+     down to 14px at ≤420px (a non-monotonic history from being patched at
+     3 separate breakpoints over time, not a deliberate "bigger touch
+     target on phones" curve). Replaced with one plain, monotonic taper. */
+  --opt-pad-x: clamp(12px, 10.67px + 0.37vw, 16px); /* auto = same width for all options, based on the widest one */
   --opt-shadow: var(--mac-hairline);                     /* no drop shadow — cleaner */
-  --opt-gap: 12px;          /* vertical space between options */
+  /* was clamp(20px, 8.33px + 0.46vw, 15px) — min (20) > max (15), which
+     CSS resolves by just using the min every time, so this had frozen at
+     a flat 20px regardless of viewport. Back to an actual ascending
+     range. */
+  --opt-gap: clamp(10px, 8.33px + 0.46vw, 15px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
+  /* space between the + icon and the options list below it — was sharing
+     --opt-gap above (same value, two different jobs); split out so each
+     can be tuned on its own. */
+  --toggle-gap: clamp(10px, 8.33px + 0.46vw, 15px);
   --opt-select-scale: 1.1; /* how much the selected option swells */
   --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
 
-  /* + toggle */
-  --toggle-size: 120px;
+  /* + toggle — fluid, was a flat 125px with 92px/84px/76px/68px overrides
+     at 4 separate breakpoints (tablet, mobile, short-height, small-phone).
+     One continuous formula, blending a vw-based and a vh-based reading
+     (same min() shape used throughout Hero/CaseDisc/LogoDisc), so it
+     scales smoothly with either dimension instead of snapping at any of
+     those 4 specific widths/heights. */
+  --toggle-size: clamp(68px, min(49px + 5.28vw, 22.4px + 11.4vh), 125px);
 
   /* fill-out sheet (a Mac window in XMB dress) */
-  --sheet-width: 340px;
-  --sheet-gap: 20px;        /* space between the option and where the sheet emerges */
+  /* fluid — was a flat 500px with 3 breakpoint overrides, each its own
+     min(fixed-px, 100vw-margin) safety clamp. One continuous formula
+     instead; the global overflow-x: hidden in global.css is still the
+     backstop for the very narrowest screens, same as everywhere else. */
+  --sheet-width: clamp(240px, 153px + 24.07vw, 500px);
+  --sheet-gap: clamp(14px, 12px + 0.56vw, 20px);        /* space between the option and where the sheet emerges — fluid, was 20px/14px */
   --sheet-radius: 0px;
   --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
   --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
   --titlebar-height: 40px;
-  --sheet-max-height: calc(84vh - 140px); /* keeps a sheet on screen; scrolls inside if the window is shorter */
+  /* fluid vh formula — was calc(84vh - 140px), with a calc(90vh - 90px)
+     override below 700px tall. One formula spanning both instead, with a
+     bit of floor/ceiling safety margin beyond either original value. */
+  --sheet-max-height: clamp(240px, calc(69vh - 7px), 620px);
 
   /* positioned against .titleCardGroup (Hero.jsx), NOT .pinInner directly —
      that wrapper has no explicit width, so it shrinks to fit titlecard.png
@@ -73,8 +101,8 @@
      right edge regardless of its actual rendered width, and top: 100%
      puts the toggle straight down, directly underneath it. */
   position: absolute;
-  right: 0;
-  top: 40%;
+  right: -7%;
+  top: 39%;
   margin-top: var(--opt-gap);
   z-index: 2000;
   display: flex;
@@ -87,7 +115,7 @@
      the options stay flush with .titleCardGroup's right edge (right: 0
      above) regardless of which one happens to be wider. */
   align-items: flex-end;
-  gap: var(--opt-gap);
+  gap: var(--toggle-gap);
   font-family: var(--mac-font);
   transition: opacity 0.3s ease;
 }
@@ -118,7 +146,7 @@
   cursor: pointer;
   overflow: hidden; /* clips the image to this square, whatever its own shape */
   transform-origin: top right;
-  transition: transform 0.2s ease, scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.2s ease, scale 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toggle[data-open] {
@@ -130,11 +158,14 @@
   height: 100%;
   object-fit: cover;
   pointer-events: none;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* was cubic-bezier(0.34, 1.56, 0.64, 1) — that curve overshoots past
+     180deg then springs back, reading as a bounce on the rotate. Plain
+     ease-out settles straight into place instead. */
+  transition: transform 0.25s ease-out;
 }
 
 .toggle[data-open] .toggleImg {
-  transform: rotate(135deg);
+  transform: rotate(180deg);
 }
 
 .toggle:active {
@@ -159,7 +190,7 @@
   align-items: stretch; /* every option the same width as the widest one */
   gap: var(--opt-gap);
   transform-origin: top right;
-  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: scale 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* options pop out a touch while the menu is open */
@@ -169,6 +200,7 @@
 
 .item {
   position: relative;
+  will-change: transform, opacity;
   margin-top: calc((var(--count) - 1 - var(--i)) * var(--cascade-indent));
   /* GSAP owns opacity/visibility/y from here — closed by default so there's
      no flash before the first effect runs */
@@ -187,6 +219,16 @@
   justify-content: center;
   width: 100%;
   height: var(--menu-item-height);
+  /* scales from its right edge, not the default center — every option is
+     the same CSS width (align-items: stretch on .list), but scale()
+     around a center origin grows/shrinks BOTH edges, so whichever option
+     was swelled (--opt-select-scale, on hover/focus/active) had its right
+     edge pushed out past the others' — the actual cause of the options'
+     right edge visibly not lining up with each other or the toggle above
+     them. Right-edge origin keeps that edge fixed at every scale, flush
+     with .list/.menu's own right edge regardless of which option (if any)
+     is currently swelled. */
+  transform-origin: right center;
   position: relative;
   z-index: 2; /* above the sheet, which starts tucked behind it */
   box-sizing: border-box;
@@ -217,7 +259,11 @@
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* the XMB selection: brighter glass, a soft glow, and a small swell */
+/* the XMB selection: brighter glass, a soft glow, and a small swell —
+   --opt-select-scale was declared up in .menu but never actually applied
+   here, so the "swells slightly like an XMB icon" this file's own top
+   comment describes wasn't happening; hover/focus/active just inherited
+   .opt's own resting scale(0.94) unchanged. */
 .opt:hover,
 .optActive,
 .opt[data-focused] {
@@ -225,6 +271,7 @@
   background: var(--opt-hover-bg), var(--opt-bg);
   color: var(--opt-hover-color);
   box-shadow: var(--mac-hairline), var(--opt-glow);
+  transform: scale(var(--opt-select-scale));
 }
 
 .opt:active {
@@ -253,7 +300,7 @@
   visibility: hidden; /* GSAP autoAlpha takes over */
   opacity: 0;
   pointer-events: auto;
-  will-change: transform;
+  will-change: transform, opacity;
   overflow: hidden;
   background: var(--sheet-bg);
   -webkit-backdrop-filter: var(--sheet-blur);
@@ -406,32 +453,29 @@
 
 /* ─── responsive ─────────────────────────────────────────── */
 
-@media (max-width: 768px) {
-  /* right: 0; top: 100% from the base rule still holds — .menu tracks
-     .titleCardGroup's own position/size, which has its own mobile
-     override in Hero.module.css */
-  .menu {
-    --opt-pad-x: 18px;
-    --menu-item-height: 38px;
-    --sheet-width: min(340px, calc(100vw - 150px));
-  }
-}
+/* no more breakpoint overrides here — every size custom property above
+   (--toggle-size, --opt-pad-x, --opt-gap, --menu-item-height,
+   --sheet-width, --sheet-gap, --sheet-max-height) is now a fluid clamp()
+   that scales continuously with viewport width and/or height on its own,
+   replacing what used to be 4 separate breakpoint bands (tablet, mobile,
+   small-phone, short-height) each overriding a handful of these
+   individually. "right: 0; top: 100%" from .menu's own base rule still
+   holds at every size — .menu tracks .titleCardGroup's position, which is
+   fluid the same way now (see Hero.module.css). */
 
 @media (prefers-reduced-motion: reduce) {
-  .toggle::before,
   .opt,
   .toggle {
     transition: none;
     animation: none;
   }
 
+  /* covers both .opt's own resting scale(0.94) and the hover/focused
+     swell above — one rule instead of two identical ones */
+  .opt,
   .opt:hover,
   .optActive,
   .opt[data-focused] {
-    transform: none;
-  }
-
-  .opt {
     transform: none;
   }
 }

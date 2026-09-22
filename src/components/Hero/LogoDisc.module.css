@@ -90,8 +90,13 @@
   top: 56%;
   left: 45%;
   transform: translate(-50%, -50%);
-  width: 450px;
-  height: 450px;
+  /* fluid — was a flat 450px with a 320px tablet override and a 260px
+     mobile override. One continuous formula, blending a vw-based and a
+     vh-based reading (same min() shape as .titleCardImg/CaseDisc's
+     --disc-size) so this shrinks smoothly by both width and height, with
+     no jump at any specific breakpoint. */
+  width: clamp(260px, min(197px + 17.6vw, 108px + 38vh), 450px);
+  height: clamp(260px, min(197px + 17.6vw, 108px + 38vh), 450px);
   pointer-events: none;
   mix-blend-mode: var(--wiy-logo-blend, multiply);
   will-change: transform, opacity;
@@ -118,8 +123,11 @@
   filter: brightness(0.45) saturate(0.6);
 }
 
-@media (max-width: 768px) {
-  .ambientGroup {
-    width: 260px;
-  }
-}
+/* no more breakpoint overrides here — .ambientGroup's width/height above
+   already scale fluidly by both viewport width and height (the min() of a
+   vw-based and a vh-based reading), so .ambientFloat doesn't need its own
+   separate vh-based scale-down either — that got removed the same way
+   Hero.module.css's .floatCase one did (CSS's `scale` takes a plain
+   unitless number, which there's no clean way to derive fluidly from a vh
+   length; baking the vh sensitivity into an actual length, like the width
+   above, sidesteps that entirely). */
