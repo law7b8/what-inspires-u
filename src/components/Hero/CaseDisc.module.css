@@ -2,16 +2,23 @@
 
 .caseBody {
   /* every size below (.spine's height, .disc/.discSlot, .discCaseGroup's
-     height) reads this one custom property instead of repeating its own
-     clamp() — it inherits down through all of them since they're all
-     descendants. Fluid: was a flat 500px with 2 breakpoint overrides
-     (340px tablet, 200px mobile, plus a separately-hand-tuned 260px
-     .caseBody override that didn't quite match .disc's own 200px at that
-     same breakpoint). One continuous formula now, blending a vw-based and
-     a vh-based reading (same min() shape as .titleCardImg in
+     height) is driven off this one custom property instead of repeating
+     its own clamp() — it inherits down through all of them since they're
+     all descendants. --disc-size is the case's WIDTH; height is always
+     derived from it via the real artwork's aspect ratio (--disc-ratio,
+     420:362 — the corrected non-square dimensions from the macOS
+     rendering fix, was briefly forced back to a square box by this fluid-
+     scaling pass before merging with that fix), so it can never drift
+     back out of proportion at any size. Fluid: was a flat 500px (square)
+     with 2 breakpoint overrides. One continuous formula now, blending a
+     vw-based and a vh-based reading (same min() shape as .titleCardImg in
      Hero.module.css) so it shrinks smoothly by width AND by height, with
-     no jump at any specific breakpoint and no more of that mismatch. */
-  --disc-size: clamp(200px, min(100px + 27.78vw, -40px + 60vh), 500px);
+     no jump at any specific breakpoint. Endpoints anchored to the fix's
+     own values: 200px at a 360px-wide/400px-tall viewport (matches its
+     old mobile override) up to 420px at 1440px-wide/900px-tall (its
+     desktop size). */
+  --disc-ratio: 0.8619; /* 362 / 420, precomputed so it's a plain multiplier in calc() below, not a division */
+  --disc-size: clamp(200px, min(126.67px + 20.37vw, 24px + 44vh), 420px);
   position: relative;
   display: flex;
   align-items: center;
@@ -92,7 +99,7 @@
 
 .spine {
   width: 24px;
-  height: var(--disc-size);
+  height: calc(var(--disc-size) * var(--disc-ratio));
   border-right: none;
   display: flex;
   align-items: center;
@@ -139,7 +146,7 @@
   will-change: transform;
   flex-shrink: 0;
   width: var(--disc-size);
-  height: var(--disc-size);
+  height: calc(var(--disc-size) * var(--disc-ratio));
   /* visible, not hidden: the case image tumbles continuously in 3D
      (this component's own caseTumble), so a clipped box chops off its
      edges mid-rotation instead of just cropping the static overhang */
@@ -177,7 +184,7 @@
   top: 50%;
   left: 24%;
   transform: translate(-50%, -50%);
-  height: var(--disc-size);
+  height: calc(var(--disc-size) * var(--disc-ratio));
   width: 100%;
   z-index: 500;
   transform-style: preserve-3d;
@@ -188,6 +195,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: contain;
   /* no filter here (was blur(0.3px)) — combining `filter` with
      `backface-visibility: hidden` on a continuously 3D-rotated element
      hits a real Chromium/WebKit compositing bug where the element gets
@@ -228,6 +236,7 @@
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
   mix-blend-mode: var(--wiy-case-blend, normal);
   filter: blur(0.3px) brightness(0.5) saturate(0.6);
 }
@@ -241,8 +250,10 @@
 }
 
 /* no more breakpoint overrides here — .disc/.discSlot/.spine/
-   .discCaseGroup all read --disc-size above, which already scales
-   fluidly by both width and height. .discSlot's own width/height: auto
-   (its base rule) means it just tracks .disc's size automatically, so it
-   never needed an override of its own even back when these were fixed
-   breakpoint values. */
+   .discCaseGroup all read --disc-size (+ --disc-ratio for height) above,
+   which already scales fluidly by both width and height and floors out
+   at exactly 200×172 (the same numbers a mobile-only override here used
+   to hardcode) once the viewport gets small enough on its own. .discSlot's
+   own width/height: auto (its base rule) means it just tracks .disc's
+   size automatically, so it never needed an override of its own even
+   back when these were fixed breakpoint values. */

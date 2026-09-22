@@ -70,11 +70,10 @@ const LogoDisc = forwardRef(function LogoDisc(_props, ref) {
 
             // ── reduced motion: no scroll hijack, just a slow XYZ tumble ──
             mm.add('(prefers-reduced-motion: reduce)', () => {
-                gsap.set(ambientGroup, { opacity: 0.12, scale: 2.15, x: restX(), y: restY() });
+                gsap.set(ambientGroup, { opacity: 0.12, scale: 1, x: restX(), y: restY() });
                 idleSpin = gsap.to(ambientGroup, {
                     rotationX: '+=360', rotationY: '+=360', rotationZ: '+=360',
-                    duration: 10, ease: 'none', repeat: -1,
-                    onUpdate: syncShadowToSpin,
+                    duration: 48, ease: 'none', repeat: -1,
                 });
                 return () => idleSpin && idleSpin.kill();
             });
@@ -93,7 +92,7 @@ const LogoDisc = forwardRef(function LogoDisc(_props, ref) {
                 // scale/z/x/y/opacity on this same element (never
                 // rotation), so the two never fight over the same
                 // property.
-                const ambientTumble = createTumble(ambientGroup, LOGO_SPIN, { onUpdate: syncShadowToSpin });
+                const ambientTumble = createTumble(ambientGroup, LOGO_SPIN);
 
                 boosterRef.current = createSpinBooster(ambientTumble);
 
