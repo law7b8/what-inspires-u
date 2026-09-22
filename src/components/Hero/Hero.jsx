@@ -62,18 +62,33 @@ export default function Hero() {
     const openFileWindow = (file, originRect) => {
         setOpenWindows((wins) => {
             if (wins.some((w) => w.id === file.id)) {
-                // already open — bring it to front instead of duplicating
+                // already open — an img file toggles its enlarged window
+                // closed on a second click; an mp3 file still just comes
+                // to front (closing mid-playback isn't what a re-click
+                // on it usually means)
+                if (file.kind === 'img') return wins.filter((w) => w.id !== file.id);
                 return wins.map((w) => (w.id === file.id ? { ...w, z: nextZRef.current++ } : w));
             }
             const slot = wins.length % MAX_OPEN_WINDOWS;
-            // img windows open at 2.5x the normal 280px width (see
-            // .imgWindow in FileWindow.module.css), capped to the screen
-            const width = file.kind === 'img' ? Math.min(700, window.innerWidth - 32) : 280;
+            // every window opens at 2x its normal size, capped to the
+            // screen: 2x the flat 280px window width normally (see
+            // .enlarged in FileWindow.module.css) — but for an mp3 with a
+            // real video behind it (embedWidth/embedHeight, from
+            // trackLookup.js's oEmbed read), 2x its own native size
+            // instead, so the window opens at the video's real aspect
+            // ratio rather than stretching it to the generic 560px.
+            const width = Math.min(file.embedWidth ? file.embedWidth * 2 : 560, window.innerWidth - 32);
             const spawned = {
                 ...file,
                 x: Math.max(16, window.innerWidth - width - 32 - slot * 28),
                 y: 96 + slot * 28,
                 z: nextZRef.current++,
+                // stored so FileWindow can actually apply it (was computed
+                // here for the x placement above and then silently
+                // dropped — the window's real rendered width came only
+                // from .enlarged's own flat 560px in the CSS, never this
+                // value, so embedWidth above never actually did anything)
+                width,
                 // the clicked floating file's own on-screen rect (plain
                 // object — a DOMRect wouldn't survive being spread into
                 // state cleanly) — FileWindow enlarges open from here
@@ -327,6 +342,7 @@ export default function Hero() {
                     data={w}
                     x={w.x}
                     y={w.y}
+                    width={w.width}
                     zIndex={w.z}
                     origin={w.origin}
                     onClose={() => closeFileWindow(w.id)}

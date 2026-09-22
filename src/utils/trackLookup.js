@@ -45,7 +45,23 @@ function parse(source, data) {
     // ever comes from one of the 3 hardcoded ENDPOINTS above (never an
     // arbitrary URL the visitor could smuggle in) and is rendered nowhere
     // but the file's own "open" window.
-    return { artist, title, cover: data.thumbnail_url || '', source, embed: data.html || '' };
+    //
+    // oEmbed also hands back the embed's own native width/height as plain
+    // JSON fields (separate from the html string) — a YouTube video's real
+    // aspect ratio, not necessarily 16:9. Only kept when both are actual
+    // finite numbers: YouTube always supplies them; SoundCloud sometimes
+    // reports width as "100%" (a string) rather than a pixel value, which
+    // isn't a usable ratio, so embedWidth/embedHeight just come back
+    // undefined there and the enlarged window falls back to its normal
+    // fixed size instead of trying to force a ratio out of nothing.
+    const width = Number(data.width);
+    const height = Number(data.height);
+    const hasRatio = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+
+    return {
+        artist, title, cover: data.thumbnail_url || '', source, embed: data.html || '',
+        ...(hasRatio && { embedWidth: width, embedHeight: height }),
+    };
 }
 
 export async function lookupTrack(rawUrl) {

@@ -153,12 +153,14 @@
   transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
 }
 
-/* pushed very slightly back on the z-axis while the options menu is open:
-   a hair smaller, dimmer and softer, all easing back when it closes */
+/* pushed back on the z-axis while the options menu is open: smaller,
+   dimmer and softer, easing back when it closes. Was two separate depths
+   (a light recede on the menu opening, a deeper one layered on top once a
+   sheet was actually out) — one depth now, used for both. */
 :global(html[data-options-open]) .floatCase {
-  scale: 0.965;
-  opacity: 0.88;
-  filter: blur(0.8px);
+  scale: 0.9;
+  opacity: 0.6;
+  filter: blur(2px);
 }
 
 @keyframes floatBob {

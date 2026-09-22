@@ -51,7 +51,7 @@
   --opt-hover-color: var(--wiy-menu-text-hover, #ffffff);
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
-  --opt-radius: 0px;
+  --opt-radius: 5px; /* matches the enlarged img file window's own radius (FileWindow.module.css .imgWindow) */
   /* fluid — was a flat 12px that bumped up to 18px at ≤768px then back
      down to 14px at ≤420px (a non-monotonic history from being patched at
      3 separate breakpoints over time, not a deliberate "bigger touch
@@ -62,12 +62,17 @@
      CSS resolves by just using the min every time, so this had frozen at
      a flat 20px regardless of viewport. Back to an actual ascending
      range. */
-  --opt-gap: clamp(10px, 8.33px + 0.46vw, 15px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
+  --opt-gap: clamp(6px, 8.33px + 0.46vw, 15px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
   /* space between the + icon and the options list below it — was sharing
      --opt-gap above (same value, two different jobs); split out so each
      can be tuned on its own. */
-  --toggle-gap: clamp(10px, 8.33px + 0.46vw, 15px);
-  --opt-select-scale: 1.1; /* how much the selected option swells */
+  /* was clamp(20px, ..., 15px) — min (20) > max (15), which CSS resolves
+     by just using the min every time, so this had frozen at a flat 20px
+     regardless of viewport (same issue --opt-gap had earlier). Fixed to
+     an actual ascending range, and nudged up a bit more space between the
+     + icon and the options below it. */
+  --toggle-gap: clamp(22px, 22px + 0.56vw, 30px);
+  --opt-select-scale: 1; /* how much the selected option swells */
   --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
 
   /* + toggle — fluid, was a flat 125px with 92px/84px/76px/68px overrides
@@ -85,11 +90,14 @@
      backstop for the very narrowest screens, same as everywhere else. */
   --sheet-width: clamp(240px, 153px + 24.07vw, 500px);
   --sheet-gap: clamp(14px, 12px + 0.56vw, 20px);        /* space between the option and where the sheet emerges — fluid, was 20px/14px */
-  --sheet-radius: 0px;
+  /* same radius as the option pill it slides out from (--opt-radius) —
+     was its own flat 0px, so post img/post mp3's pills were rounded but
+     their sheets stayed square. Tied to --opt-radius instead of just
+     matching its value, so they can never drift apart again. */
+  --sheet-radius: var(--opt-radius);
   --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
   --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
-  --titlebar-height: 40px;
   /* fluid vh formula — was calc(84vh - 140px), with a calc(90vh - 90px)
      override below 700px tall. One formula spanning both instead, with a
      bit of floor/ceiling safety margin beyond either original value. */
@@ -196,6 +204,48 @@
 /* options pop out a touch while the menu is open */
 .menu:has(.toggle[data-open]) .list {
   scale: 1.04;
+}
+
+/* the "what can I do here" blurb — pops out from the title card's own
+   right edge (this and .menu are siblings, both position: absolute
+   against .titleCardGroup in Hero.jsx; .menu's own right/top above sit it
+   underneath the card, this sits beside it instead). Not a descendant of
+   .menu, so it can't read its custom properties (the --mac- and --sheet-
+   prefixed ones) — values below just match that look directly instead. */
+.about {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 18px;
+  width: 220px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: lowercase;
+  background: rgba(30, 24, 34, 0.85);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-radius: 5px; /* matches --opt-radius */
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 30px rgba(0, 0, 0, 0.25);
+  z-index: 2000;
+  pointer-events: none;
+  /* GSAP owns opacity/visibility/x from here (see the useEffect in
+     PlusMenu.jsx) — closed by default so there's no flash before it runs */
+  opacity: 0;
+  visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  /* no room beside the card once it's stacked for mobile (same reasoning
+     as SideImage/OptionsMenu's own mobile treatment) — the options
+     already explain themselves once opened, this is a nice-to-have */
+  .about {
+    display: none;
+  }
 }
 
 .item {
@@ -311,53 +361,18 @@
   color: var(--xmb-text);
 }
 
-/* clean header: the option's name on the left, one close button on the right */
-.titlebar {
-  height: var(--titlebar-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.titleText {
-  font-size: var(--menu-font-size);
-  font-weight: 300;
-  letter-spacing: 0.06em;
-  text-transform: lowercase;
-  color: var(--xmb-text);
-  text-shadow: 0 0 6px rgba(var(--xmb-glow), 0.5);
-}
-
-.close {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  font-size: 20px;
-  font-weight: 300;
-  line-height: 1;
-  color: var(--xmb-text-dim);
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.close:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.15);
-}
-
+/* no more header here (was .titlebar/.titleText/.close — the option's
+   name + its own × close button, above .sheetBody below) — each form
+   (ImgForm/Mp3Form) already has its own Cancel button wired to
+   closeSheet in PlusMenu.jsx, so removing it lost no functionality. */
 .sheetBody {
   padding: 16px;
   overflow-y: auto;
   color-scheme: dark; /* dark scrollbars, matching the dark sheet */
-  /* later options start lower down, so each step loses a bit of height */
-  max-height: calc(var(--sheet-max-height) - var(--i) * 50px - var(--titlebar-height));
+  /* later options start lower down, so each step loses a bit of height —
+     no longer also subtracting --titlebar-height, since there's no
+     titlebar above this anymore to make room for */
+  max-height: calc(var(--sheet-max-height) - var(--i) * 50px);
 }
 
 /* the form is just content of the window now — no card of its own. Doubled

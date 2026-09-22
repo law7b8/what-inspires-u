@@ -67,7 +67,6 @@ export default function ImgForm({ className = '', onLaunch, onCancel }) {
 
     return (
         <form onSubmit={(e) => e.preventDefault()} className={`polaroid ${className}`.trim()}>
-            <label>Image</label>
             <div
                 className={`${styles.dropzone} ${dragOver ? styles.dragOver : ''}`}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

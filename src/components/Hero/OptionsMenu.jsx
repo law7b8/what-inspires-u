@@ -15,7 +15,7 @@ import styles from './OptionsMenu.module.css';
 // every frame for the orbit, so logoRef/caseRef are passed in as props
 // (their own forwardRef handles) rather than something this component
 // could discover on its own.
-export default function OptionsMenu({ logoRef, caseRef, firstText = 'tmp3o.com', secondText = '+archive.cd' }) {
+export default function OptionsMenu({ logoRef, caseRef, firstText = 'tmp3o.com', secondText = 'archive.cd' }) {
     const optionsRef = useRef(null);
     const topbarOrbitRef = useRef(null);
     const titleOrbitRef = useRef(null);

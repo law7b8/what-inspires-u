@@ -116,6 +116,22 @@
   border-radius: 6px;
 }
 
+/* when the oEmbed read gave us the video's own real width/height
+   (FileWindow.jsx sets aspect-ratio inline + this attribute together),
+   the iframe fills that ratio'd box exactly rather than keeping its own
+   raw height attribute from the oEmbed html string — that's what lets the
+   window actually open (and resize) at the video's true aspect ratio
+   instead of a generic fixed height. No attribute, no change: SoundCloud/
+   Spotify embeds (which don't reliably report a numeric width/height)
+   keep behaving exactly as before, sized by their own height attribute. */
+.embedWrap[data-has-ratio] {
+  overflow: hidden;
+}
+
+.embedWrap[data-has-ratio] iframe {
+  height: 100%;
+}
+
 .noPlayback {
   text-align: center;
 }
@@ -128,7 +144,7 @@
 
 @media (max-width: 480px) {
   .window,
-  .imgWindow {
+  .enlarged {
     width: calc(100vw - 32px);
   }
 }
@@ -138,68 +154,80 @@
   min-height: 120px;
 }
 
-/* ─── img windows: the picture is the window ─────────────────
-   Opens at 2.5x the normal window width, no padding/border/radius around
-   the image, and a clear (translucent glass) top bar carrying the file
-   name, a context dropdown arrow, and the close button. */
-.imgWindow {
-  width: 700px; /* 2.5 x 280px */
-  resize: none; /* scale-only resizing via .resizeHandle instead */
+/* ─── enlarged windows: the content fills the window ──────────
+   Shared by img and mp3 windows alike. Opens at 2x the normal window
+   width, no padding/border/radius around the content (the picture, or the
+   oEmbed player), and a translucent glass top bar carrying the file name
+   (plus, img windows only, a context dropdown arrow) and the close
+   button. */
+.enlarged {
+  width: 560px; /* 2 x 280px */
+  resize: none; /* scale-only-by-width resizing via .resizeHandle instead */
   min-height: 0;
   max-height: none;
   display: block;
-  border: 1px solid #ffffff;
-  border-radius: 5px; /* same as the floating file thumbnails (Mp3File.module.css .thumb) */
-  /* no background here (was #000000) — the black now lives only on .body
-     below, behind the image itself. The titlebar row has its own solid
-     grey background (see .imgWindow .titlebar), so this outer box doesn't
-     need to supply one. */
+  /* rounds the titlebar's own top corners (via the base .window's
+     overflow: hidden) to match .body's own radius below */
+  border-radius: 5px;
+  /* the base .window rule defaults to a solid white background
+     (var(--wiy-surface)) — left unset here, that was showing straight
+     through the transparent titlebar (and around .body's edges) instead
+     of the titlebar actually being clear/see-through. Explicit
+     transparent overrides it: the black on .body below still handles the
+     image's own backdrop, this outer box needs none of its own. */
+  background: transparent;
   position: fixed;
 }
 
-.imgWindow .titlebar {
-  /* a normal flex item above the image (the window is display: flex;
-     flex-direction: column — see .window), not laid over it — was
-     position: absolute, which stacked it on top of .imgWindow .bigImg */
-  background: #4a4a4a;
+.enlarged .titlebar {
+  /* a normal flex item above the content (the window is display: flex;
+     flex-direction: column — see .window), not laid over it — img
+     windows used to lay this over the picture (position: absolute) */
+  /* same frosted grey glass pill as the floating file's own name label
+     (Mp3File.module.css .label) — one consistent "name tag" look for the
+     file whether it's floating or open */
+  background: rgba(90, 90, 95, 0.38);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   justify-content: flex-start;
 }
 
-.imgWindow .closeBtn {
+.enlarged .closeBtn {
   color: #ffffff;
   background: transparent;
 }
 
-.imgWindow .closeBtn:hover {
+.enlarged .closeBtn:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-.imgWindow .contextBtn {
+.enlarged .contextBtn {
   color: #ffffff;
   background: transparent;
 }
 
-.imgWindow .contextBtn:hover {
+.enlarged .contextBtn:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* wraps the context arrow + name as one unit — this is what slides up
-   from below on open (see the useLayoutEffect in FileWindow.jsx) */
+/* wraps the name (and, img windows only, the context arrow before it) as
+   one unit — this is what slides up from below on open (see the
+   useLayoutEffect in FileWindow.jsx) */
 .label {
   display: flex;
   align-items: center;
   min-width: 0;
 }
 
-.imgWindow .body {
+.enlarged .body {
   padding: 0;
   overflow: hidden;
   background: #000000;
+  border-radius: 5px; /* same as the floating file thumbnails (Mp3File.module.css .thumb) */
 }
 
-.imgWindow .bigImg {
+.enlarged .bigImg {
   width: 100%;
   height: auto;
   max-height: none;

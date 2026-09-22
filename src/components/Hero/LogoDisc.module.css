@@ -21,11 +21,13 @@
   transition: scale 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease, filter 0.8s ease;
 }
 
-/* recedes slightly while PlusMenu's options are open (see Hero.module.css) */
+/* recedes while PlusMenu's options are open (see Hero.module.css) — one
+   depth now, was two (a lighter one on menu-open, a deeper one layered on
+   top once a sheet was actually out). */
 :global(html[data-options-open]) .ambientFloat {
-  scale: 0.965;
-  opacity: 0.88;
-  filter: blur(0.8px);
+  scale: 0.9;
+  opacity: 0.6;
+  filter: blur(2px);
 }
 
 @keyframes floatBob {
@@ -87,8 +89,8 @@
      orbit tracks this element's live position every frame (see
      OptionsMenu.jsx), so shifting the logo carries the orbiting text
      along with it automatically, no separate change needed there. */
-  top: 56%;
-  left: 45%;
+  top: 53%;
+  left: 42.5%;
   transform: translate(-50%, -50%);
   /* --ambient-ratio (264:300, the real tempoLogo.png proportions from the
      macOS rendering fix — this fluid-scaling pass had briefly forced it

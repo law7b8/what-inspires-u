@@ -19,8 +19,13 @@ const SHEET_HIDDEN = -105; // % of its own width a sheet sits to the left (behin
 // size) is a CSS custom property at the top of PlusMenu.module.css.
 // onLaunchMp3(track, origin)/onLaunchImg(file, origin) are called when a
 // file is shot from the mp3/img sheet respectively.
+// concise "what can I do here" blurb, pops out from the title card's right
+// edge alongside the options — edit freely, it's just static copy.
+const ABOUT_TEXT = 'post an image or a track link — it floats free here. click one to open it big, drag it anywhere, resize it.';
+
 export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     const rootRef = useRef(null);
+    const aboutRef = useRef(null);
     const firstRun = useRef(true);
     const [open, setOpen] = useState(false);
     const [sheet, setSheet] = useState(null); // id of the open sheet, or null
@@ -43,11 +48,11 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
         if (open) {
             gsap.to(items, {
                 autoAlpha: 1, y: 0,
-                // was 0.5s/0.08 stagger with a bigger back.out overshoot —
-                // trimmed both so the cascade reads snappier without losing
-                // the XMB "pop" on each item
+                // was back.out(1.4), which overshoots past y:0 and springs
+                // back — a deliberate bounce. power2.out decelerates into
+                // place with no overshoot at all, same duration/stagger.
                 duration: instant ? 0 : 0.4, stagger: instant ? 0 : 0.06,
-                ease: 'back.out(1.4)', overwrite: true,
+                ease: 'power2.out', overwrite: true,
             });
         } else {
             gsap.to(items, {
@@ -85,6 +90,22 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
         if (open) root.setAttribute('data-options-open', '');
         else root.removeAttribute('data-options-open');
         return () => root.removeAttribute('data-options-open');
+    }, [open]);
+
+    // the about blurb pops out from the title card's right edge in step
+    // with the options opening — same fade + slight slide-in used
+    // elsewhere here, just on its own timeline since it isn't one of the
+    // cascading [data-item]s.
+    useEffect(() => {
+        if (!aboutRef.current) return;
+        const instant = firstRun.current || reduced();
+        gsap.to(aboutRef.current, {
+            autoAlpha: open ? 1 : 0,
+            x: open ? 0 : -12,
+            duration: instant ? 0 : 0.35,
+            ease: open ? 'power2.out' : 'power2.in',
+            overwrite: true,
+        });
     }, [open]);
 
     // closing the menu closes the sheet too, and resets the highlight back
@@ -151,6 +172,7 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     };
 
     return (
+        <>
         <div className={styles.menu} ref={rootRef} style={{ '--count': OPTIONS.length }}>
             <button
                 type="button"
@@ -193,17 +215,10 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
                                     id={`plus-menu-sheet-${opt.id}`}
                                     data-sheet={opt.id}
                                 >
-                                    <div className={styles.titlebar}>
-                                        <span className={styles.titleText}>{opt.label}</span>
-                                        <button
-                                            type="button"
-                                            className={styles.close}
-                                            onClick={closeSheet}
-                                            aria-label={`close ${opt.label}`}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
+                                    {/* no header bar here anymore (was a titlebar with the
+                                        option's name + its own × close button) — each form
+                                        already has its own Cancel button wired to closeSheet,
+                                        so nothing was actually lost by taking it out */}
                                     <div className={styles.sheetBody}>
                                         {opt.id === 'post-img' && (
                                             <ImgForm className={styles.sheetForm} onLaunch={handleLaunchImg} onCancel={closeSheet} />
@@ -219,5 +234,13 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
                 })}
             </ul>
         </div>
+
+        {/* pops out from the title card's right edge alongside the
+            options (see the useEffect above) — a concise, always-the-
+            same blurb, not part of the OPTIONS cascade above */}
+        <div className={styles.about} ref={aboutRef} aria-hidden={!open}>
+            {ABOUT_TEXT}
+        </div>
+        </>
     );
 }
