@@ -22,7 +22,8 @@
      instead of several different sizes. */
   --mac-font: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   --menu-font-size: 13px;
-  --xmb-glow: var(--wiy-glow, 160, 200, 255);   /* rgb of the glow — set per theme in tokens.css */
+  --xmb-glow: var(--wiy-glow, 160, 200, 255);
+  /* rgb of the glow — set per theme in tokens.css */
   /* dark text, not white — --mac-glass below (the option pills' own
      background) already resolves to near-white (253, 252, 252), so white
      text on it was close to unreadable. Everything here reads dark-on-
@@ -30,7 +31,8 @@
      leftover dark-glass PS3/XMB look from before that redesign. */
   --xmb-text: var(--wiy-menu-text, #ffffff);
   --xmb-text-dim: rgba(255, 255, 255, 0.85);
-  --mac-glass: var(--wiy-glass, rgba(30, 24, 34, 0.7)); /* smoked glass */
+  --mac-glass: var(--wiy-glass, rgba(30, 24, 34, 0.7));
+  /* smoked glass */
   --mac-glass-blur: blur(18px) saturate(150%);
   --mac-hairline: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --mac-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
@@ -51,18 +53,22 @@
   --opt-hover-color: var(--wiy-menu-text-hover, #ffffff);
   --opt-hover-bg: linear-gradient(rgba(255, 255, 255, 0.34), rgba(var(--xmb-glow), 0.22));
   --opt-glow: 0 0 18px rgba(var(--xmb-glow), 0.7), 0 0 4px rgba(255, 255, 255, 0.6);
-  --opt-radius: 5px; /* matches the enlarged img file window's own radius (FileWindow.module.css .imgWindow) */
+  --opt-radius: 5px;
+  /* matches the enlarged img file window's own radius (FileWindow.module.css .imgWindow) */
   /* fluid — was a flat 12px that bumped up to 18px at ≤768px then back
      down to 14px at ≤420px (a non-monotonic history from being patched at
      3 separate breakpoints over time, not a deliberate "bigger touch
      target on phones" curve). Replaced with one plain, monotonic taper. */
-  --opt-pad-x: clamp(2px, 10px, 6px); /* auto = same width for all options, based on the widest one */
-  --opt-shadow: var(--mac-hairline);                     /* no drop shadow — cleaner */
+  --opt-pad-x: clamp(2px, 10px, 6px);
+  /* auto = same width for all options, based on the widest one */
+  --opt-shadow: var(--mac-hairline);
+  /* no drop shadow — cleaner */
   /* was clamp(20px, 8.33px + 0.46vw, 15px) — min (20) > max (15), which
      CSS resolves by just using the min every time, so this had frozen at
      a flat 20px regardless of viewport. Back to an actual ascending
      range. */
-  --opt-gap: clamp(4px, 4.67px + 0.23vw, 8px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
+  --opt-gap: clamp(4px, 4.67px + 0.23vw, 8px);
+  /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
   /* space between the + icon and the options list below it — was sharing
      --opt-gap above (same value, two different jobs); split out so each
      can be tuned on its own. */
@@ -72,8 +78,10 @@
      an actual ascending range, and nudged up a bit more space between the
      + icon and the options below it. */
   --toggle-gap: clamp(20px, 10px + 0.28vw, 14px);
-  --opt-select-scale: 0.97; /* how much the selected option swells — was 1 (full swell up from the 0.94 resting scale); now a smaller step up */
-  --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
+  --opt-select-scale: 0.97;
+  /* how much the selected option swells — was 1 (full swell up from the 0.94 resting scale); now a smaller step up */
+  --cascade-indent: 0px;
+  /* > 0 steps each option sideways as it cascades */
 
   /* + toggle — fluid, was a flat 125px with 92px/84px/76px/68px overrides
      at 4 separate breakpoints (tablet, mobile, short-height, small-phone).
@@ -89,15 +97,18 @@
      instead; the global overflow-x: hidden in global.css is still the
      backstop for the very narrowest screens, same as everywhere else. */
   --sheet-width: clamp(240px, 153px + 24.07vw, 500px);
-  --sheet-gap: clamp(14px, 12px + 0.56vw, 20px);        /* space between the option and where the sheet emerges — fluid, was 20px/14px */
+  --sheet-gap: clamp(14px, 12px + 0.56vw, 20px);
+  /* space between the option and where the sheet emerges — fluid, was 20px/14px */
   /* same radius as the option pill it slides out from (--opt-radius) —
      was its own flat 0px, so post img/post mp3's pills were rounded but
      their sheets stayed square. Tied to --opt-radius instead of just
      matching its value, so they can never drift apart again. */
   --sheet-radius: var(--opt-radius);
-  --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85)); /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
+  --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85));
+  /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
-  --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25); /* same soft shadow as the post cards */
+  --sheet-shadow: var(--mac-hairline), 0 10px 30px rgba(0, 0, 0, 0.25);
+  /* same soft shadow as the post cards */
   /* fluid vh formula — was calc(84vh - 140px), with a calc(90vh - 90px)
      override below 700px tall. One formula spanning both instead, with a
      bit of floor/ceiling safety margin beyond either original value. */
@@ -152,7 +163,8 @@
   background: none;
   border: none;
   cursor: pointer;
-  overflow: hidden; /* clips the image to this square, whatever its own shape */
+  overflow: hidden;
+  /* clips the image to this square, whatever its own shape */
   transform-origin: top right;
   transition: transform 0.2s ease, scale 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -169,7 +181,7 @@
   /* was cubic-bezier(0.34, 1.56, 0.64, 1) — that curve overshoots past
      180deg then springs back, reading as a bounce on the rotate. Plain
      ease-out settles straight into place instead. */
-  transition: transform 0.25s ease-out;
+  transition: transform 0.11s ease-out;
 }
 
 .toggle[data-open] .toggleImg {
@@ -195,7 +207,8 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch; /* every option the same width as the widest one */
+  align-items: stretch;
+  /* every option the same width as the widest one */
   gap: var(--opt-gap);
   transform-origin: top right;
   transition: scale 0.55s cubic-bezier(0.22, 1, 0.36, 1);
@@ -214,21 +227,26 @@
    prefixed ones) — values below just match that look directly instead. */
 .about {
   position: absolute;
-  left: 105%;
+  left: 100%;
   top: 0;
   margin-left: 18px;
-  width: max-content; /* was a flat 220px, which wrapped "fill this page up with your ideas" onto 2 lines — each line reads better as one row */
-  max-width: min(360px, calc(100vw - 40px)); /* safety clamp so a long line can't run off the right edge on narrower viewports */
+  width: max-content;
+  /* was a flat 220px, which wrapped "fill this page up with your ideas" onto 2 lines — each line reads better as one row */
+  max-width: min(360px, calc(100vw - 40px));
+  /* safety clamp so a long line can't run off the right edge on narrower viewports */
   padding: 14px 16px;
   box-sizing: border-box;
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   letter-spacing: 0.01em;
-  color: var(--wiy-ink-soft); /* same color as the "press h to hide ui" subtitle */
-  font-weight: 300; /* skinnier than the default weight */
+  color: var(--wiy-ink-soft);
+  /* same color as the "press h to hide ui" subtitle */
+  font-weight: 300;
+  /* skinnier than the default weight */
   text-transform: uppercase;
-  border-radius: 5px; /* matches --opt-radius */
+  border-radius: 5px;
+  /* matches --opt-radius */
   z-index: 2000;
   pointer-events: none;
   /* GSAP owns opacity/visibility/x from here (see the useEffect in
@@ -238,13 +256,29 @@
 }
 
 .aboutLine {
-  min-height: 1.5em; /* holds its line's height even before any characters have typed in */
-  white-space: nowrap; /* each line stays on one row instead of wrapping */
+  min-height: 1.5em;
+  /* holds its line's height even before any characters have typed in */
+  white-space: nowrap;
+  /* each line stays on one row instead of wrapping */
   will-change: transform, opacity;
   /* GSAP owns opacity/visibility/y from here (see the typing effect in
      PlusMenu.jsx) — closed by default so there's no flash before it runs */
   opacity: 0;
   visibility: hidden;
+}
+
+/* small credit logo under the typed info text — static (not part of the
+   typewriter sequence above, just fades in with the rest of .about),
+   dim/small so it reads as a signature rather than a fourth line of the
+   actual copy. Sized off its own real aspect ratio (1060x226 source) via
+   height + width: auto, not a flat width, so it never stretches. */
+.aboutCredit {
+  display: block;
+  margin-top: 10px;
+  height: 16px;
+  width: auto;
+  right: 120%;
+  opacity: 0.6;
 }
 
 /* blinking typewriter caret — an inline block the height of the text,
@@ -261,8 +295,16 @@
 }
 
 @keyframes about-caret-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -272,6 +314,7 @@
 }
 
 @media (max-width: 768px) {
+
   /* no room beside the card once it's stacked for mobile (same reasoning
      as SideImage/OptionsMenu's own mobile treatment) — the options
      already explain themselves once opened, this is a nice-to-have */
@@ -312,7 +355,8 @@
      is currently swelled. */
   transform-origin: right center;
   position: relative;
-  z-index: 2; /* above the sheet, which starts tucked behind it */
+  z-index: 2;
+  /* above the sheet, which starts tucked behind it */
   box-sizing: border-box;
   font-family: var(--opt-font);
   font-size: var(--opt-font-size);
@@ -373,13 +417,15 @@
   left: calc(100% + var(--sheet-gap));
   width: var(--sheet-width);
   padding: 40px 40px 40px 0;
-  box-sizing: content-box; /* the site is border-box globally; the padding must not eat the sheet's width */
+  box-sizing: content-box;
+  /* the site is border-box globally; the padding must not eat the sheet's width */
   overflow: hidden;
   pointer-events: none;
 }
 
 .sheet {
-  visibility: hidden; /* GSAP autoAlpha takes over */
+  visibility: hidden;
+  /* GSAP autoAlpha takes over */
   opacity: 0;
   pointer-events: auto;
   will-change: transform, opacity;
@@ -400,7 +446,8 @@
 .sheetBody {
   padding: 16px;
   overflow-y: auto;
-  color-scheme: dark; /* dark scrollbars, matching the dark sheet */
+  color-scheme: dark;
+  /* dark scrollbars, matching the dark sheet */
   /* later options start lower down, so each step loses a bit of height —
      no longer also subtracting --titlebar-height, since there's no
      titlebar above this anymore to make room for */
@@ -511,6 +558,7 @@
    fluid the same way now (see Hero.module.css). */
 
 @media (prefers-reduced-motion: reduce) {
+
   .opt,
   .toggle {
     transition: none;

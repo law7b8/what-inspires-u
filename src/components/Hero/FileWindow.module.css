@@ -191,6 +191,10 @@
   backdrop-filter: blur(4px);
   color: #ffffff;
   justify-content: flex-start;
+  /* skinnier than the base .titlebar's 34px — this one carries no visible
+     chrome of its own besides the name/close button (no colored fill to
+     fill out), so it doesn't need the same height to read comfortably. */
+  height: 26px;
 }
 
 .enlarged .closeBtn {
@@ -224,12 +228,27 @@
   padding: 0;
   overflow: hidden;
   background: #000000;
-  border-radius: 5px; /* same as the floating file thumbnails (Mp3File.module.css .thumb) */
+  /* only the bottom corners — the top edge sits flush against .titlebar
+     directly above it (same flex column, no gap), so rounding the top
+     corners here read as a seam/gap in that shared edge instead of one
+     continuous connected surface. */
+  border-radius: 0 0 5px 5px;
 }
 
 .enlarged .bigImg {
   width: 100%;
   height: auto;
+  /* explicitly none, not just omitted — the base .bigImg rule above sets
+     max-height: 260px for the small non-enlarged preview, and without this
+     override that value cascades straight through here too (higher
+     specificity alone doesn't help when this rule simply doesn't mention
+     the property at all). Hero.jsx's openFileWindow computes the window's
+     own width from the file's real native width/height together, scaled
+     to at most 2x and shrunk further only if that 2x size wouldn't fit the
+     viewport on either axis — so by the time this renders, width: 100%;
+     height: auto already lands at exactly the right height on its own; no
+     separate CSS clamp here (which previously fought that JS-computed size
+     and letterboxed the image) is needed. */
   max-height: none;
   border-radius: 0;
 }

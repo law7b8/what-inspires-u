@@ -19,7 +19,13 @@ const restX = () => window.innerWidth * 0.15;
 const restY = () => window.innerHeight * 0.08;
 
 const MAX_FLOATING_FILES = 8;
-const MAX_OPEN_WINDOWS = 4;
+const MAX_OPEN_WINDOWS = 25;
+// how many diagonal steps the spawn-position cascade takes before looping
+// back to the first spot — separate from MAX_OPEN_WINDOWS so raising that
+// cap doesn't also march new windows' starting position further and
+// further off the bottom/left of the screen with no wraparound
+const CASCADE_SLOTS = 8;
+const TITLEBAR_HEIGHT = 26; // matches .enlarged .titlebar's own fixed height in FileWindow.module.css
 
 // Hero is now the orchestrator, not the owner, of the case/logo/options
 // blocks — each of those is its own self-contained component
@@ -69,15 +75,41 @@ export default function Hero() {
                 if (file.kind === 'img') return wins.filter((w) => w.id !== file.id);
                 return wins.map((w) => (w.id === file.id ? { ...w, z: nextZRef.current++ } : w));
             }
-            const slot = wins.length % MAX_OPEN_WINDOWS;
-            // every window opens at 2x its normal size, capped to the
-            // screen: 2x the flat 280px window width normally (see
-            // .enlarged in FileWindow.module.css) — but for an mp3 with a
-            // real video behind it (embedWidth/embedHeight, from
-            // trackLookup.js's oEmbed read), 2x its own native size
-            // instead, so the window opens at the video's real aspect
-            // ratio rather than stretching it to the generic 560px.
-            const width = Math.min(file.embedWidth ? file.embedWidth * 2 : 560, window.innerWidth - 32);
+            const slot = wins.length % CASCADE_SLOTS;
+            // every window opens at 2x its normal size — 2x the flat 280px
+            // window width normally (see .enlarged in FileWindow.module.css)
+            // — but for an mp3 with a real video behind it (embedWidth/
+            // embedHeight, from trackLookup.js's oEmbed read) or an img file
+            // (imgWidth/imgHeight, from ImgForm's own natural-size read), 2x
+            // its own native width AND height instead, so the window opens
+            // at the file's real aspect ratio rather than stretching/
+            // shrinking it to the generic 560px. Scaled down from 2x (never
+            // up) only as far as needed to keep both dimensions on screen —
+            // width alone isn't enough to bound this: a tall/portrait image
+            // could still be 2x its own (comfortably narrow) width yet
+            // taller than the viewport, so height has to be checked too.
+            // The viewport ceiling itself is deliberately well under the
+            // full screen (60%, not "whatever fits minus a small margin") —
+            // a real photo's own pixel size is almost always well past what
+            // 2x can ever actually reach on any screen, so without a real
+            // ceiling here the window would end up simply "as big as the
+            // screen allows" for most photos, which reads as oversized
+            // regardless of how the 2x math worked out.
+            // FileWindow.module.css's .enlarged .bigImg then just does
+            // width: 100%; height: auto with no CSS-side max-height of its
+            // own, since this already lands at the right size.
+            const VIEWPORT_FIT_RATIO = 0.6;
+            const nativeWidth = file.embedWidth || file.imgWidth;
+            const nativeHeight = file.embedHeight || file.imgHeight;
+            let width;
+            if (nativeWidth && nativeHeight) {
+                const maxW = window.innerWidth * VIEWPORT_FIT_RATIO;
+                const maxH = window.innerHeight * VIEWPORT_FIT_RATIO - TITLEBAR_HEIGHT;
+                const scale = Math.min(2, maxW / nativeWidth, maxH / nativeHeight);
+                width = nativeWidth * scale;
+            } else {
+                width = Math.min(nativeWidth ? nativeWidth * 2 : 560, window.innerWidth * VIEWPORT_FIT_RATIO);
+            }
             const spawned = {
                 ...file,
                 x: Math.max(16, window.innerWidth - width - 32 - slot * 28),

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ImgFile from './ImgFile';
 import DragToLaunch from './DragToLaunch';
 import styles from './ImgForm.module.css';
@@ -26,6 +26,20 @@ export default function ImgForm({ className = '', onLaunch, onCancel }) {
     const [name, setName] = useState('');
     const [context, setContext] = useState('');
     const [dragOver, setDragOver] = useState(false);
+    // the cover's own natural pixel size, once known — mirrors mp3's
+    // embedWidth/embedHeight (from trackLookup.js's oEmbed read): Hero.jsx
+    // uses it to open the enlarged window at 2x the image's real size
+    // instead of always the flat 560px (2x the generic window width).
+    const [naturalSize, setNaturalSize] = useState(null);
+
+    useEffect(() => {
+        if (!cover) { setNaturalSize(null); return; }
+        let cancelled = false;
+        const img = new Image();
+        img.onload = () => { if (!cancelled) setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight }); };
+        img.src = cover;
+        return () => { cancelled = true; };
+    }, [cover]);
 
     const setCoverFromFile = (file) => {
         if (!file || !file.type.startsWith('image/')) return;
@@ -55,7 +69,10 @@ export default function ImgForm({ className = '', onLaunch, onCancel }) {
     const canLaunch = Boolean(cover) && name.trim().length > 0;
 
     const launch = (dropPoint) => {
-        onLaunch({ cover, fileName: imgFileName(name), context: context.trim() }, dropPoint);
+        onLaunch({
+            cover, fileName: imgFileName(name), context: context.trim(),
+            imgWidth: naturalSize?.width, imgHeight: naturalSize?.height,
+        }, dropPoint);
         // ownership of the blob: URL (if any) passes to the floating file
         // that now renders it — don't revoke it out from under that <img>
         objectUrlRef.current = null;
@@ -63,6 +80,7 @@ export default function ImgForm({ className = '', onLaunch, onCancel }) {
         setUrlInput('');
         setName('');
         setContext('');
+        setNaturalSize(null);
     };
 
     return (

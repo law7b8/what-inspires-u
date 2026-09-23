@@ -23,10 +23,10 @@ export default function Header() {
 
                     <Link to="/" className={styles.titleLink} id="header-title">
                         <h1 className={styles.title}>
-                            WHAT INSPIRES <span>U?</span>
+                            <img src="/what inspires u_.png" alt="what inspires u?" />
                         </h1>
                     </Link>
-                    <p className={styles.subtitle}>press h to hide ui</p>
+                    <img src="/made by law.png" alt="made by law" className={styles.subtitle} />
 
                     <p className={styles.desc}></p>
                 </div>

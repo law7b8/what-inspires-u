@@ -153,8 +153,12 @@ export default function FloatingFiles({ files, onOpen }) {
             moved: false, lastX: px, lastY: py, lastT: performance.now(), vx: 0, vy: 0,
         });
         if (!reducedMotion()) {
+            // power2.out, not back.out — back's overshoot swings the
+            // rotation past its target before settling, which reads as the
+            // file rocking left/right the instant it's picked up. power2.out
+            // still lifts it in smoothly, just without the overshoot.
             gsap.to(el.firstChild, {
-                scale: HOLD_SCALE, rotation: rand(-6, 6), duration: 0.18, ease: 'back.out(2)',
+                scale: HOLD_SCALE, rotation: rand(-6, 6), duration: 0.18, ease: 'power2.out',
             });
         }
     };
@@ -195,7 +199,10 @@ export default function FloatingFiles({ files, onOpen }) {
         if (!drag || !sim) return;
         sim.held = false;
         if (!reducedMotion() && el) {
-            gsap.to(el.firstChild, { scale: 1, rotation: 0, duration: 0.3, ease: 'back.out(2)' });
+            // power2.out here too (see onPickUp above) — back.out would
+            // swing rotation past 0 to the opposite side before settling,
+            // the same left/right rocking on the way back down.
+            gsap.to(el.firstChild, { scale: 1, rotation: 0, duration: 0.3, ease: 'power2.out' });
         }
 
         if (drag.moved) {
@@ -223,7 +230,10 @@ export default function FloatingFiles({ files, onOpen }) {
         if (!sim) return;
         sim.held = false;
         if (!reducedMotion() && el) {
-            gsap.to(el.firstChild, { scale: 1, rotation: 0, duration: 0.3, ease: 'back.out(2)' });
+            // power2.out here too (see onPickUp above) — back.out would
+            // swing rotation past 0 to the opposite side before settling,
+            // the same left/right rocking on the way back down.
+            gsap.to(el.firstChild, { scale: 1, rotation: 0, duration: 0.3, ease: 'power2.out' });
         }
         if (drag?.moved) {
             const angle = rand(0, Math.PI * 2);

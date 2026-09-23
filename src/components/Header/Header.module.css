@@ -50,7 +50,6 @@
     text-decoration: underline;
 }
 
-
 .topbarRight {
     display: flex;
     align-items: center;
@@ -79,6 +78,11 @@
 .left {
     display: flex;
     flex-direction: column;
+    /* explicit, not relying on the default (stretch) — tmp3o.com, the
+       title and made-by-law are all left-flush against the same edge now
+       instead of each auto-width child getting stretched to the column's
+       full width and re-centered inside its own box. */
+    align-items: flex-start;
     gap: 6px;
 }
 
@@ -88,6 +92,7 @@
     letter-spacing: 0.16em;
     color: var(--wiy-ink-faint);
     text-transform: lowercase;
+    z-index: 2;
 }
 
 .desc {
@@ -156,24 +161,22 @@
     text-decoration: none;
     color: inherit;
     position: relative;
-    z-index: 2;
+    z-index: 1;
     display: inline-block;
 }
 
 .title {
-    font-size: 48px;
-    font-weight: 700;
-    line-height: 0.95;
-    color: var(--wiy-ink);
-    letter-spacing: -0.01em;
-    text-transform: lowercase;
-    white-space: nowrap;
     margin: 0;
 }
 
-.title span {
-    font-weight: 500;
-    color: var(--wiy-ink-soft);
+/* the title is now the what-inspires-u wordmark image (see Header.jsx)
+   rather than live text — sized off its own real aspect ratio (1454x227
+   source) via height + width: auto, same approach as .subtitle below. */
+.title img {
+    display: block;
+    height: 44px;
+    width: auto;
+    opacity: 0.75;
 }
 
 .rule {
@@ -187,12 +190,16 @@
 
 .subtitle {
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
+    object-fit: contain;
+    height: 20px;
+    width: auto;
     font-size: 10px;
     letter-spacing: 0.18em;
     color: var(--wiy-ink-soft);
     text-transform: uppercase;
     position: relative;
-    z-index: 2;
+    z-index: -100;
+    opacity: 0.3;
 }
 
 /* ─── right ─────────────────────────────────────────────── */
@@ -263,8 +270,8 @@
         align-items: center;
     }
 
-    .title {
-        font-size: 40px;
+    .title img {
+        height: 38px;
     }
 
     .logoBg {

@@ -119,6 +119,12 @@
      through — pinSpacing keeps the page content below the pinned hero, never
      under it. */
   background: transparent;
+  /* NOT overflow: clip here (tried, reverted) — SideImage is deliberately
+     positioned to bleed a bit above this box's own top edge into .app's
+     padding above it (see .app in app.css), and clipping right at THIS
+     box's edge cut that bleed off as a hard visible line. The scrollHeight
+     fix for SideImage's occasional oversized tumble now lives on .app
+     instead, which actually contains that bleed. */
 }
 
 /* ─── case wrapper ───────────────────────────────────────── */

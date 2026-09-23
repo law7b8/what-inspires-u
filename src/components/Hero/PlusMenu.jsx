@@ -327,6 +327,7 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
                     {typingLine === i && <span className={styles.cursor} />}
                 </div>
             ))}
+            <div className={styles.aboutCredit}>press h to hide ui</div>
         </div>
         </>
     );

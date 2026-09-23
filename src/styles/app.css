@@ -8,6 +8,21 @@
     margin: 0;
     display: flex;
     flex-direction: column;
+    /* Hero's SideImage tumbles a decorative image in continuous 3D
+       (rotationX/Y/Z via GSAP) — at some angles that projects a bounding
+       box far bigger than its own flat/CSS-clamped size, and since it's
+       position: absolute, that oversized box was still counting toward
+       this page's scrollable height (out-of-flow descendants do that even
+       though they don't affect layout), briefly ballooning
+       document.scrollHeight and loading the page scrolled near the
+       bottom. min-height (not a flat height) means this box still grows
+       normally for routes with more real content, so this only ever clips
+       an out-of-flow descendant that's ballooned past the app's own
+       actual size — never in-flow content. Deliberately not on Hero's own
+       .pinInner (tried, reverted): that box is tighter than SideImage's
+       intended bleed above it, into this padding, and clipped that off as
+       a visible hard edge. */
+    overflow: clip;
 }
 
 .app-container {
