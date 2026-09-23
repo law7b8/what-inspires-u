@@ -40,7 +40,7 @@
      breakpoints (mobile width, small-phone width, short height). One
      continuous formula instead, blending a vw-based and a vh-based
      reading so it scales smoothly with either. */
-  --menu-item-height: clamp(34px, min(30.67px + 0.926vw, 26px + 2vh), 44px);
+  --menu-item-height: clamp(34px, min(30.67px + 0.926vw, 26px + 2vh), 20px);
 
   /* options */
   --opt-font: var(--mac-font);
@@ -56,13 +56,13 @@
      down to 14px at ≤420px (a non-monotonic history from being patched at
      3 separate breakpoints over time, not a deliberate "bigger touch
      target on phones" curve). Replaced with one plain, monotonic taper. */
-  --opt-pad-x: clamp(12px, 10.67px + 0.37vw, 16px); /* auto = same width for all options, based on the widest one */
+  --opt-pad-x: clamp(2px, 10px, 6px); /* auto = same width for all options, based on the widest one */
   --opt-shadow: var(--mac-hairline);                     /* no drop shadow — cleaner */
   /* was clamp(20px, 8.33px + 0.46vw, 15px) — min (20) > max (15), which
      CSS resolves by just using the min every time, so this had frozen at
      a flat 20px regardless of viewport. Back to an actual ascending
      range. */
-  --opt-gap: clamp(6px, 8.33px + 0.46vw, 15px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
+  --opt-gap: clamp(4px, 4.67px + 0.23vw, 8px);          /* vertical space BETWEEN OPTIONS — fluid, was 15px/10px across 2 breakpoints */
   /* space between the + icon and the options list below it — was sharing
      --opt-gap above (same value, two different jobs); split out so each
      can be tuned on its own. */
@@ -71,8 +71,8 @@
      regardless of viewport (same issue --opt-gap had earlier). Fixed to
      an actual ascending range, and nudged up a bit more space between the
      + icon and the options below it. */
-  --toggle-gap: clamp(22px, 22px + 0.56vw, 30px);
-  --opt-select-scale: 1; /* how much the selected option swells */
+  --toggle-gap: clamp(20px, 10px + 0.28vw, 14px);
+  --opt-select-scale: 0.97; /* how much the selected option swells — was 1 (full swell up from the 0.94 resting scale); now a smaller step up */
   --cascade-indent: 0px;    /* > 0 steps each option sideways as it cascades */
 
   /* + toggle — fluid, was a flat 125px with 92px/84px/76px/68px overrides
@@ -109,8 +109,8 @@
      right edge regardless of its actual rendered width, and top: 100%
      puts the toggle straight down, directly underneath it. */
   position: absolute;
-  right: -7%;
-  top: 39%;
+  right: -3%;
+  top: 42%;
   margin-top: var(--opt-gap);
   z-index: 2000;
   display: flex;
@@ -177,7 +177,7 @@
 }
 
 .toggle:active {
-  transform: scale(0.96);
+  transform: translateX(3px) scale(0.96);
 }
 
 .toggle:focus-visible,
@@ -214,29 +214,61 @@
    prefixed ones) — values below just match that look directly instead. */
 .about {
   position: absolute;
-  left: 100%;
+  left: 105%;
   top: 0;
   margin-left: 18px;
-  width: 220px;
+  width: max-content; /* was a flat 220px, which wrapped "fill this page up with your ideas" onto 2 lines — each line reads better as one row */
+  max-width: min(360px, calc(100vw - 40px)); /* safety clamp so a long line can't run off the right edge on narrower viewports */
   padding: 14px 16px;
   box-sizing: border-box;
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.9);
-  text-transform: lowercase;
-  background: rgba(30, 24, 34, 0.85);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
+  color: var(--wiy-ink-soft); /* same color as the "press h to hide ui" subtitle */
+  font-weight: 300; /* skinnier than the default weight */
+  text-transform: uppercase;
   border-radius: 5px; /* matches --opt-radius */
-  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 30px rgba(0, 0, 0, 0.25);
   z-index: 2000;
   pointer-events: none;
   /* GSAP owns opacity/visibility/x from here (see the useEffect in
      PlusMenu.jsx) — closed by default so there's no flash before it runs */
   opacity: 0;
   visibility: hidden;
+}
+
+.aboutLine {
+  min-height: 1.5em; /* holds its line's height even before any characters have typed in */
+  white-space: nowrap; /* each line stays on one row instead of wrapping */
+  will-change: transform, opacity;
+  /* GSAP owns opacity/visibility/y from here (see the typing effect in
+     PlusMenu.jsx) — closed by default so there's no flash before it runs */
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* blinking typewriter caret — an inline block the height of the text,
+   shown only on whichever line is currently typing (see .about's own
+   typingLine state in PlusMenu.jsx) */
+.cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 1px;
+  background: currentColor;
+  vertical-align: -0.15em;
+  animation: about-caret-blink 0.85s step-end infinite;
+}
+
+@keyframes about-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
 }
 
 @media (max-width: 768px) {

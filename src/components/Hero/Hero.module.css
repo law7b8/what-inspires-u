@@ -36,6 +36,15 @@
      clear of .layer's 1000 so the group (title card + PlusMenu) always
      wins now, unambiguously. */
   z-index: 2500;
+  transition: opacity 0.3s ease;
+}
+
+/* HudControls (bottom-right corner button) sets this on <html> — fades the
+   title card (and PlusMenu, nested inside this group) out too, same as the
+   footer below, for a clean screen recording/screenshot. */
+:global(html[data-hud-hidden]) .titleCardGroup {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .titleCardImg {

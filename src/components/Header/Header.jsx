@@ -26,7 +26,7 @@ export default function Header() {
                             WHAT INSPIRES <span>U?</span>
                         </h1>
                     </Link>
-                    <p className={styles.subtitle}></p>
+                    <p className={styles.subtitle}>press h to hide ui</p>
 
                     <p className={styles.desc}></p>
                 </div>

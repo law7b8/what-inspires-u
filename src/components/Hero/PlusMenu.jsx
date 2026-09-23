@@ -20,8 +20,18 @@ const SHEET_HIDDEN = -105; // % of its own width a sheet sits to the left (behin
 // onLaunchMp3(track, origin)/onLaunchImg(file, origin) are called when a
 // file is shot from the mp3/img sheet respectively.
 // concise "what can I do here" blurb, pops out from the title card's right
-// edge alongside the options — edit freely, it's just static copy.
-const ABOUT_TEXT = 'post an image or a track link — it floats free here. click one to open it big, drag it anywhere, resize it.';
+// edge alongside the options — edit freely, it's just static copy. Typed
+// out one line at a time (see the typewriter effect below), not a single
+// paragraph, so it's a short list of lines rather than prose.
+const ABOUT_LINES = [
+    'find an img or mp3',
+    'fill this page up with your ideas',
+    'capture your space',
+];
+const TYPE_MS = 22;        // ms per character while a line is typing
+const LINE_PAUSE_MS = 220; // pause after a line finishes before the next starts
+const TYPE_START_DELAY = 150; // lets the panel's own fade/slide start first
+const LINE_HIDDEN_Y = 14;  // px each line starts below its resting spot — fades/slides up into place as it starts typing
 
 export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     const rootRef = useRef(null);
@@ -36,6 +46,13 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     // option lands back on the first, and vice versa).
     const [focusedIndex, setFocusedIndex] = useState(0);
     const wheelLockRef = useRef(false);
+    // the about blurb's own typewriter state — how much of each line is
+    // "typed" so far, and which line (if any) is actively typing right now
+    // (drives the blinking cursor's position).
+    const [typedLines, setTypedLines] = useState(() => ABOUT_LINES.map(() => ''));
+    const [typingLine, setTypingLine] = useState(-1);
+    const typingTimeouts = useRef([]);
+    const lineRefs = useRef([]);
 
     const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const moveFocus = (delta) => setFocusedIndex((i) => (i + delta + OPTIONS.length) % OPTIONS.length);
@@ -106,6 +123,71 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             ease: open ? 'power2.out' : 'power2.in',
             overwrite: true,
         });
+    }, [open]);
+
+    // types the blurb out one line at a time, same "reveal in sequence" idea
+    // as the options cascading in below the toggle — just character-by-
+    // character instead of item-by-item. Re-types from scratch every time
+    // the menu opens (mirrors the options, which also replay their cascade
+    // on every open rather than only once).
+    useEffect(() => {
+        typingTimeouts.current.forEach(clearTimeout);
+        typingTimeouts.current = [];
+
+        if (!open) {
+            setTypedLines(ABOUT_LINES.map(() => ''));
+            setTypingLine(-1);
+            gsap.set(lineRefs.current, { autoAlpha: 0, y: LINE_HIDDEN_Y });
+            return;
+        }
+
+        if (firstRun.current || reduced()) {
+            setTypedLines([...ABOUT_LINES]);
+            setTypingLine(-1);
+            gsap.set(lineRefs.current, { autoAlpha: 1, y: 0 });
+            return;
+        }
+
+        setTypedLines(ABOUT_LINES.map(() => ''));
+        gsap.set(lineRefs.current, { autoAlpha: 0, y: LINE_HIDDEN_Y });
+
+        const typeLine = (lineIndex) => {
+            if (lineIndex >= ABOUT_LINES.length) {
+                setTypingLine(-1);
+                return;
+            }
+            setTypingLine(lineIndex);
+            // each line fades in and slides up into place right as it
+            // starts typing, same fade + move used for the cascading
+            // options, just bottom-to-top instead of top-to-bottom.
+            const lineEl = lineRefs.current[lineIndex];
+            if (lineEl) {
+                gsap.to(lineEl, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out', overwrite: true });
+            }
+            const text = ABOUT_LINES[lineIndex];
+            let charIndex = 0;
+            const step = () => {
+                charIndex += 1;
+                setTypedLines((prev) => {
+                    const next = [...prev];
+                    next[lineIndex] = text.slice(0, charIndex);
+                    return next;
+                });
+                if (charIndex < text.length) {
+                    typingTimeouts.current.push(setTimeout(step, TYPE_MS));
+                } else {
+                    typingTimeouts.current.push(setTimeout(() => typeLine(lineIndex + 1), LINE_PAUSE_MS));
+                }
+            };
+            step();
+        };
+
+        typingTimeouts.current.push(setTimeout(() => typeLine(0), TYPE_START_DELAY));
+
+        return () => {
+            typingTimeouts.current.forEach(clearTimeout);
+            typingTimeouts.current = [];
+        };
     }, [open]);
 
     // closing the menu closes the sheet too, and resets the highlight back
@@ -239,7 +321,12 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             options (see the useEffect above) — a concise, always-the-
             same blurb, not part of the OPTIONS cascade above */}
         <div className={styles.about} ref={aboutRef} aria-hidden={!open}>
-            {ABOUT_TEXT}
+            {ABOUT_LINES.map((_, i) => (
+                <div key={i} className={styles.aboutLine} ref={(el) => (lineRefs.current[i] = el)}>
+                    {typedLines[i]}
+                    {typingLine === i && <span className={styles.cursor} />}
+                </div>
+            ))}
         </div>
         </>
     );

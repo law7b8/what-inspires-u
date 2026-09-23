@@ -189,8 +189,8 @@
     font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
     font-size: 10px;
     letter-spacing: 0.18em;
-    color: var(--wiy-ink-faint);
-    text-transform: lowercase;
+    color: var(--wiy-ink-soft);
+    text-transform: uppercase;
     position: relative;
     z-index: 2;
 }
