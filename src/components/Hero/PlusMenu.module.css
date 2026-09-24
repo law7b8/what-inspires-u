@@ -78,8 +78,6 @@
      an actual ascending range, and nudged up a bit more space between the
      + icon and the options below it. */
   --toggle-gap: clamp(20px, 10px + 0.28vw, 14px);
-  --opt-select-scale: 0.97;
-  /* how much the selected option swells — was 1 (full swell up from the 0.94 resting scale); now a smaller step up */
   --cascade-indent: 0px;
   /* > 0 steps each option sideways as it cascades */
 
@@ -99,11 +97,6 @@
   --sheet-width: clamp(240px, 153px + 24.07vw, 500px);
   --sheet-gap: clamp(14px, 12px + 0.56vw, 20px);
   /* space between the option and where the sheet emerges — fluid, was 20px/14px */
-  /* same radius as the option pill it slides out from (--opt-radius) —
-     was its own flat 0px, so post img/post mp3's pills were rounded but
-     their sheets stayed square. Tied to --opt-radius instead of just
-     matching its value, so they can never drift apart again. */
-  --sheet-radius: var(--opt-radius);
   --sheet-bg: var(--wiy-sheet-bg, rgba(30, 24, 34, 0.85));
   /* light, not dark navy — see-through, blurred behind, but bright enough for dark text to read clearly */
   --sheet-blur: blur(24px) saturate(160%);
@@ -114,25 +107,44 @@
      bit of floor/ceiling safety margin beyond either original value. */
   --sheet-max-height: clamp(240px, calc(69vh - 7px), 620px);
 
-  /* positioned against .titleCardGroup (Hero.jsx), NOT .pinInner directly —
-     that wrapper has no explicit width, so it shrinks to fit titlecard.png
-     itself, meaning right: 0 here lines up exactly with the image's own
-     right edge regardless of its actual rendered width, and top: 100%
-     puts the toggle straight down, directly underneath it. */
+  /* ── QUADRANT LAYOUT ───────────────────────────────────────
+     .titleCardGroup (Hero.jsx / Hero.module.css) is the one true anchor —
+     everything below is positioned relative to IT, not the viewport, so
+     moving the title card moves this whole group with it. The 4 pieces:
+       top-left     .titleCardGroup itself (Hero.module.css) — the anchor;
+                    also where --quadrant-gap-x lives (a shared custom
+                    property only works here — it has to sit on an actual
+                    ancestor of both .menu and .about below, which are
+                    siblings of each other, not descendants of one
+                    another, so a var declared on either one alone
+                    wouldn't be visible to the other)
+       top-right    .about below — the info blurb
+       bottom-left  .menu (this rule) — the + toggle/options, inset into
+                    the title card's own bottom-right corner
+       bottom-right each option's own .sheetWindow/.sheet below — NOT
+                    positioned against the title card directly, but
+                    against whichever option (bottom-left) it belongs to,
+                    since it slides out from that option's own right edge
+
+     right: 0 lines this up with the title card's own right edge. top is a
+     calc, not 100%: the toggle (this column's first child) sits INSET at
+     the title card's own bottom-right corner, overlapping the image itself
+     rather than hanging below it — top: 100% - toggle-size puts the
+     column's start exactly high enough that the toggle's own bottom lands
+     flush with the title card's bottom edge. The options list (the
+     column's second child) then cascades out below that, past the title
+     card's own bottom edge — "come out the bottom" — still right-flush
+     with it the whole way (align-items: flex-end below). No margin-top
+     here (there used to be one, var(--opt-gap)) — that would push the
+     toggle down past the flush corner this top: calc() lands it at. */
   position: absolute;
-  right: -3%;
-  top: 42%;
-  margin-top: var(--opt-gap);
+  right: -14px;
+  top: calc(106% - var(--toggle-size));
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  /* flex-end, not center — .menu shrinks to fit its widest child (the
-     toggle, now --toggle-size: 120px, wider than the option pills), so
-     centering left the narrower options inset from that child's own right
-     edge instead of flush with it. flex-end keeps whichever child is
-     narrower right-aligned against the wider one, so both the toggle and
-     the options stay flush with .titleCardGroup's right edge (right: 0
-     above) regardless of which one happens to be wider. */
+  /* flex-end — toggle and options both stay flush with the title card's
+     right edge (right: 0 above) regardless of which one is wider. */
   align-items: flex-end;
   gap: var(--toggle-gap);
   font-family: var(--mac-font);
@@ -174,8 +186,8 @@
 }
 
 .toggleImg {
-  width: 100%;
-  height: 100%;
+  width: 115px;
+  height: auto;
   object-fit: cover;
   pointer-events: none;
   /* was cubic-bezier(0.34, 1.56, 0.64, 1) — that curve overshoots past
@@ -224,12 +236,16 @@
    against .titleCardGroup in Hero.jsx; .menu's own right/top above sit it
    underneath the card, this sits beside it instead). Not a descendant of
    .menu, so it can't read its custom properties (the --mac- and --sheet-
-   prefixed ones) — values below just match that look directly instead. */
+   prefixed ones) — values below just match that look directly instead.
+   The top-right quadrant — see the QUADRANT LAYOUT comment on .menu
+   above for how this fits with the other 3 pieces; --quadrant-gap-x
+   (used for margin-left below) lives on .titleCardGroup itself, the one
+   ancestor shared by this and .menu. */
 .about {
   position: absolute;
   left: 100%;
-  top: 0;
-  margin-left: 18px;
+  top: 110px;
+  margin-left: var(--quadrant-gap-x, 18px);
   width: max-content;
   /* was a flat 220px, which wrapped "fill this page up with your ideas" onto 2 lines — each line reads better as one row */
   max-width: min(360px, calc(100vw - 40px));
@@ -255,62 +271,29 @@
   visibility: hidden;
 }
 
+/* groups the 3 info lines together (see PlusMenu.jsx) — a plain block, just
+   something for .aboutLine's stagger reveal to live in, distinct from
+   .aboutCredit below which isn't part of that cascade. */
+.infoLines {
+  display: block;
+}
+
 .aboutLine {
-  min-height: 1.5em;
-  /* holds its line's height even before any characters have typed in */
-  white-space: nowrap;
-  /* each line stays on one row instead of wrapping */
+  min-height: 1.5em; /* holds its line's height so nothing shifts as the stagger reveals it */
+  white-space: nowrap; /* each line stays on one row instead of wrapping */
   will-change: transform, opacity;
-  /* GSAP owns opacity/visibility/y from here (see the typing effect in
+  /* GSAP owns opacity/visibility/y from here (see the stagger effect in
      PlusMenu.jsx) — closed by default so there's no flash before it runs */
   opacity: 0;
   visibility: hidden;
 }
 
-/* small credit logo under the typed info text — static (not part of the
-   typewriter sequence above, just fades in with the rest of .about),
-   dim/small so it reads as a signature rather than a fourth line of the
-   actual copy. Sized off its own real aspect ratio (1060x226 source) via
-   height + width: auto, not a flat width, so it never stretches. */
+/* small credit line under the info text — static (not part of the
+   .aboutLine stagger above, just fades in with the rest of .about), dim so
+   it reads as a signature rather than a fourth line of the actual copy. */
 .aboutCredit {
-  display: block;
   margin-top: 10px;
-  height: 16px;
-  width: auto;
-  right: 120%;
   opacity: 0.6;
-}
-
-/* blinking typewriter caret — an inline block the height of the text,
-   shown only on whichever line is currently typing (see .about's own
-   typingLine state in PlusMenu.jsx) */
-.cursor {
-  display: inline-block;
-  width: 0.5em;
-  height: 1em;
-  margin-left: 1px;
-  background: currentColor;
-  vertical-align: -0.15em;
-  animation: about-caret-blink 0.85s step-end infinite;
-}
-
-@keyframes about-caret-blink {
-
-  0%,
-  49% {
-    opacity: 1;
-  }
-
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cursor {
-    animation: none;
-  }
 }
 
 @media (max-width: 768px) {
@@ -346,13 +329,10 @@
   height: var(--menu-item-height);
   /* scales from its right edge, not the default center — every option is
      the same CSS width (align-items: stretch on .list), but scale()
-     around a center origin grows/shrinks BOTH edges, so whichever option
-     was swelled (--opt-select-scale, on hover/focus/active) had its right
-     edge pushed out past the others' — the actual cause of the options'
-     right edge visibly not lining up with each other or the toggle above
-     them. Right-edge origin keeps that edge fixed at every scale, flush
-     with .list/.menu's own right edge regardless of which option (if any)
-     is currently swelled. */
+     around a center origin grows/shrinks BOTH edges, so the option being
+     pressed (.opt:active below) had its right edge pushed out past the
+     others'. Right-edge origin keeps that edge fixed at every scale, flush
+     with .list/.menu's own right edge regardless. */
   transform-origin: right center;
   position: relative;
   z-index: 2;
@@ -373,7 +353,6 @@
   -webkit-backdrop-filter: var(--mac-glass-blur);
   backdrop-filter: var(--mac-glass-blur);
   border: none;
-  border-radius: var(--opt-radius);
   box-shadow: var(--opt-shadow);
   cursor: pointer;
   /* dimmed/shrunk by default — the PS3/XMB "shuffle" read: only the option
@@ -382,14 +361,14 @@
      more than 2 of them reads as sliding a spotlight down the column */
   opacity: 0.6;
   transform: scale(0.94);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
 }
 
-/* the XMB selection: brighter glass, a soft glow, and a small swell —
-   --opt-select-scale was declared up in .menu but never actually applied
-   here, so the "swells slightly like an XMB icon" this file's own top
-   comment describes wasn't happening; hover/focus/active just inherited
-   .opt's own resting scale(0.94) unchanged. */
+/* the XMB selection: brighter glass, a soft glow, and the text easing to
+   white — no size change (no more swell on hover/focus/active; the option
+   stays at .opt's own resting scale(0.94) the whole time), just the
+   highlight fading in via color/background/box-shadow, all covered by
+   .opt's own transition list above. */
 .opt:hover,
 .optActive,
 .opt[data-focused] {
@@ -397,7 +376,6 @@
   background: var(--opt-hover-bg), var(--opt-bg);
   color: var(--opt-hover-color);
   box-shadow: var(--mac-hairline), var(--opt-glow);
-  transform: scale(var(--opt-select-scale));
 }
 
 .opt:active {
@@ -433,7 +411,6 @@
   background: var(--sheet-bg);
   -webkit-backdrop-filter: var(--sheet-blur);
   backdrop-filter: var(--sheet-blur);
-  border-radius: var(--sheet-radius);
   box-shadow: var(--sheet-shadow);
   font-family: var(--mac-font);
   color: var(--xmb-text);
@@ -565,12 +542,9 @@
     animation: none;
   }
 
-  /* covers both .opt's own resting scale(0.94) and the hover/focused
-     swell above — one rule instead of two identical ones */
-  .opt,
-  .opt:hover,
-  .optActive,
-  .opt[data-focused] {
+  /* .opt's own resting scale(0.94) — hover/focused/active no longer set
+     a different transform at all, so this alone covers every state */
+  .opt {
     transform: none;
   }
 }

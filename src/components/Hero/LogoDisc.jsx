@@ -21,7 +21,7 @@ const restY = () => -window.innerHeight * -0.08;
 // the raw group ref the scroll timeline animates directly and reads the
 // position of, and a boostSpin(amount) function for the mouse-speed
 // feature to call into.
-const LogoDisc = forwardRef(function LogoDisc(_props, ref) {
+const LogoDisc = forwardRef(function LogoDisc({ caseRef } = {}, ref) {
     const ambientGroupRef = useRef(null);
     const ambientShadowRef = useRef(null);
     const ambientParallaxRef = useRef(null);
@@ -83,6 +83,41 @@ const LogoDisc = forwardRef(function LogoDisc(_props, ref) {
                 gsap.set(ambientGroup, {
                     opacity: .74, scale: 1, rotation: 0, rotationX: 0, rotationY: 0, rotationZ: 0, x: 0, y: 0, z: 0,
                 });
+
+                // aligns this element's own resting spot with wherever
+                // CaseDisc actually renders, measured live via
+                // getBoundingClientRect rather than assumed through a fixed
+                // CSS percentage (this element's own top: 53%; left: 42.5%
+                // in LogoDisc.module.css, which is a percentage of the full
+                // viewport). The case's real position depends on flex
+                // layout (OptionsMenu/SideImage/CaseDisc's own widths,
+                // which change non-uniformly across breakpoints — SideImage
+                // disappears below 1100px, for one) plus a flat -50px nudge
+                // on .caseWrap, none of which a percentage on THIS element
+                // can predict — the two drifted apart by 70px+ at some
+                // sizes before this. Measured once on mount (same
+                // resize-tolerance the scroll timeline below already has —
+                // restX()/restY() are also baked in once, not live — rather
+                // than a continuous resize listener, which would fight the
+                // scroll timeline's own x/y once scrolling has parked this
+                // element elsewhere). Reads imgGroupRef (.discCaseGroup),
+                // NOT discRef (.disc) — .disc is a fixed-size box that
+                // doesn't actually contain the visible case artwork:
+                // .discCaseGroup is position: absolute inside it with
+                // left: 24% + translate(-50%), which (combined with
+                // .disc's own overflow: visible) puts it sitting mostly to
+                // .disc's LEFT rather than filling it, so .disc's own rect
+                // center is nowhere near where the case actually renders.
+                const caseEl = caseRef?.current?.imgGroupRef?.current;
+                if (caseEl) {
+                    const caseRect = caseEl.getBoundingClientRect();
+                    const caseCenterX = caseRect.left + caseRect.width / 2;
+                    const caseCenterY = caseRect.top + caseRect.height / 2;
+                    const groupRect = ambientGroup.getBoundingClientRect();
+                    const anchorCenterX = groupRect.left + groupRect.width / 2;
+                    const anchorCenterY = groupRect.top + groupRect.height / 2;
+                    gsap.set(ambientGroup, { x: caseCenterX - anchorCenterX, y: caseCenterY - anchorCenterY });
+                }
 
                 // the logo's own forever tumble — 3-axis (X/Y/Z), its own
                 // independent direction/rate from discSpin.js's LOGO_SPIN

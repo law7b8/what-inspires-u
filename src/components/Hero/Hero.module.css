@@ -4,17 +4,34 @@
   position: relative;
 }
 
-/* ─── title card group ───────────────────────────────────────
+/* ─── title card group — the QUADRANT LAYOUT anchor ────────────
    Top-left, fixed/"hovering" screen position (position: absolute against
    .pinInner, plain left/top, no scroll-timeline or orbit tracking
    involved). Deliberately no explicit width — a position: absolute block
    with no width set shrinks to fit its content (the image), so this ends
    up exactly as wide as titlecard.png actually renders, whatever that
-   turns out to be. PlusMenu is positioned against THIS element (see
-   .menu's own right: 0; top: 100% in PlusMenu.module.css), not against
-   .pinInner directly, so its right edge lines up with the image's right
-   edge exactly and it sits straight down, directly underneath it. */
+   turns out to be.
+
+   This is the one true anchor for a 4-piece layout — everything below is
+   positioned relative to IT, not the viewport, so moving this group moves
+   all 4 pieces together:
+     top-left     this element — the anchor itself
+     top-right    PlusMenu's .about (PlusMenu.module.css) — the info blurb
+     bottom-left  PlusMenu's .menu (PlusMenu.module.css) — the + toggle/
+                  options, inset into this element's own bottom-right
+                  corner (see .menu's own right/top there)
+     bottom-right each option's own .sheetWindow/.sheet
+                  (PlusMenu.module.css) — not positioned against this
+                  element directly, but against whichever option
+                  (bottom-left) it belongs to
+   --quadrant-gap-x lives here (not on .menu or .about themselves) because
+   it's the one shared knob both of those siblings need to read, and a
+   custom property is only visible to actual descendants of whatever
+   declares it — .menu and .about are siblings of EACH OTHER, not
+   descendants of one another, so it has to sit on the ancestor they both
+   share. */
 .titleCardGroup {
+  --quadrant-gap-x: 18px; /* horizontal gap between the left column (this + .menu) and the right column (.about) */
   position: absolute;
   /* fluid, not a fixed 32px + a mobile-only 12px override — scales
      continuously with viewport width instead of jumping at 768px. Anchored
@@ -57,7 +74,7 @@
      so it shrinks smoothly the whole way from a 360px-wide phone (or a
      400px-tall short window) up to a 1440px/900px-tall desktop, with no
      size ever "snapping" as the window crosses a specific breakpoint. */
-  max-width: clamp(130px, min(100px + 8.33vw, 58px + 18vh), 220px);
+  max-width: clamp(100px, min(100px + 8.33vw, 58px + 18vh), 200px);
   height: auto;
   pointer-events: none;
   transform-origin: top left;

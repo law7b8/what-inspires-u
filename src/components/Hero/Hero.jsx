@@ -31,15 +31,14 @@ const TITLEBAR_HEIGHT = 26; // matches .enlarged .titlebar's own fixed height in
 // blocks — each of those is its own self-contained component
 // (CaseDisc/LogoDisc/OptionsMenu/SideImage), with its own refs, its own
 // perpetual tumble, its own reduced-motion handling. What's left here is
-// only what genuinely has to stay centralized: the mouse-speed spin boost,
-// which needs to hit-test against multiple components' elements to decide
-// which one(s) to spin up, plus a plain scroll-velocity listener that
-// boosts the logo's spin the same way. No more scroll-triggered pin/fly-
-// apart at all — everything just sits in place; scrolling only ever makes
-// the logo spin faster, it never moves anything or hijacks the page's own
-// scroll distance. Reaches into the child components via the small
-// imperative handles each one exposes (a couple of raw refs + a boostSpin
-// function) rather than owning those elements directly.
+// only what genuinely has to stay centralized: the one shared, scrubbed
+// (not pinned — adds no extra scroll height) scroll timeline that flies the
+// disc out of the case, and brings the ambient logo forward in its place,
+// and the mouse-speed spin boost, which needs to hit-test against multiple
+// components' elements to decide which one(s) to spin up. Both reach into
+// the child components via the small imperative handles each one exposes
+// (a couple of raw refs + a boostSpin function) rather than owning those
+// elements directly.
 export default function Hero() {
     const caseWrapRef = useRef(null);
 
@@ -234,77 +233,126 @@ export default function Hero() {
                 }
                 window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-                // makes scrolling itself visibly spin the logo faster — a
-                // plain native scroll listener computing velocity by hand
-                // (no ScrollTrigger, no pin — that's the whole point: this
-                // never moves or hijacks anything, it only ever reads how
-                // fast the page is scrolling). Routes through the same
-                // boostSpin LogoDisc exposes, so scroll and cursor speed
-                // never fight over its tumble's timeScale directly; they
-                // just both nudge the one booster LogoDisc owns internally.
-                let lastScrollY = window.scrollY;
-                let lastScrollTime = performance.now();
-                function handleScroll() {
-                    const now = performance.now();
-                    const dt = now - lastScrollTime;
-                    if (dt > 0 && logoDiscRef.current) {
-                        const velocity = (window.scrollY - lastScrollY) / (dt / 1000); // px/s
+                // makes scrolling itself visibly spin the logo faster — fed
+                // by the pinned ScrollTrigger's own velocity below (see
+                // onUpdate), not a separate native listener: it's tied to
+                // this same ScrollTrigger's own velocity so it stays
+                // perfectly in step with the scrubbed timeline below.
+                function boostSpinFromScroll(velocity) {
+                    if (logoDiscRef.current) {
                         logoDiscRef.current.boostSpin(gsap.utils.clamp(0, 6, Math.abs(velocity) / 500));
                     }
-                    lastScrollY = window.scrollY;
-                    lastScrollTime = now;
                 }
-                window.addEventListener('scroll', handleScroll, { passive: true });
 
-                // ── scroll-scrubbed "disc comes forward": as the page scrolls
-                // the case recedes into the depth and the ambient logo disc
-                // eases forward out of it into its parked watermark spot.
-                // Deliberately NOT pinned — no pin-spacer, so it adds no
-                // extra scroll height; the hero just scrolls away normally
-                // while the scrub plays over the first ~40% of a viewport.
-                // Only touches scale/z/x/y/opacity; LogoDisc's and
-                // CaseDisc's own tumbles keep owning rotation.
+                // ── the disc fly-apart — NOT pinned (see the scrollTrigger
+                // config below), so it adds no extra scroll height; it just
+                // scrubs a two-act timeline over a short scroll window as
+                // the hero scrolls away normally: the case shrinks, darkens
+                // and recedes into the depth (act 1) while the CD itself
+                // flies out toward the viewer, tumbling as it goes; then the
+                // ambient logo disc eases forward out of that same depth
+                // into its parked watermark spot (act 2). Only touches
+                // scale/z/x/y/opacity; LogoDisc's and CaseDisc's own tumbles
+                // keep owning rotation, except the fly-out spin below, which
+                // is this timeline's own one-shot flourish.
                 const caseImgGroupEl = caseDiscRef.current?.imgGroupRef.current;
                 const discEl = caseDiscRef.current?.discRef.current;
                 const logoEl = logoDiscRef.current?.groupRef.current;
                 let tl = null;
                 if (caseImgGroupEl && discEl && logoEl) {
+                    // act timings, as fractions of the timeline below — named
+                    // so act 1's length, act 2's start/length, and the total
+                    // all stay obviously in sync instead of relying on magic
+                    // numbers that happen to add up. ACT2_START/ACT2_DURATION
+                    // are chosen so ACT2 finishes exactly at the timeline's
+                    // own total duration: no dead scroll stretch after the
+                    // logo lands where nothing is visibly changing.
+                    const ACT1_DURATION = 0.05;
+                    const ACT2_START = 0.0;
+                    const ACT2_DURATION = 0.10;
+                    const ACT2_END = ACT2_START + ACT2_DURATION;
+
                     tl = gsap.timeline({
                         defaults: { ease: 'none' },
                         scrollTrigger: {
                             trigger: '#hero',
                             start: 'top top',
-                            end: () => '+=' + Math.round(window.innerHeight * 0.4),
-                            scrub: 0.4,
+                            // NOT pinned — no pin-spacer, so this adds zero
+                            // extra scroll height to the page (was pin:
+                            // pinRef.current + pinSpacing: true, which
+                            // reserved a chunk of blank scroll space for the
+                            // hero to sit still in while this scrubbed;
+                            // removed because that extra space was exactly
+                            // what read as "the page got longer"). The hero
+                            // just scrolls away normally while this plays
+                            // out over a short window instead — end below is
+                            // deliberately small (0.18 of a viewport) so the
+                            // whole fly-apart resolves quickly, in the
+                            // scroll distance the page's own resolution
+                            // already had before pinning was added.
+                            end: () => '+=' + Math.round(window.innerHeight * 0.18),
+                            scrub: 0.3,
                             invalidateOnRefresh: true,
+                            // ties the disc's spin rate to how fast you're
+                            // scrolling
+                            onUpdate: (self) => boostSpinFromScroll(self.getVelocity()),
                         },
                     });
-                    // x targets below are called once here, not passed as
-                    // live function references — with invalidateOnRefresh
-                    // above (needed so `end` keeps matching the viewport's
-                    // actual height), GSAP re-invokes any *function-based*
-                    // tween value on every refresh, including the resize
-                    // ones the browser fires while you're dragging its
-                    // window edge. That was recomputing these against the
-                    // window's new size mid-drag and snapping the case disc
-                    // and the logo to a different spot every time it fired.
-                    // Calling them once bakes in a plain number instead, so
-                    // only the scroll-driven scrub still moves them —
-                    // resizing the window doesn't.
+
                     tl
-                        .to(caseWrapRef.current, { scale: 0.85, z: -200, duration: 1 }, 0)
-                        .to(caseImgGroupEl, { z: -260, scale: 0.7, duration: 1 }, 0)
-                        .to(discEl, {
-                            x: window.innerWidth * 0.12, rotation: 120, rotationY: 160, scale: 1.05, z: 20, duration: 1,
-                        }, 0)
+                        // act 1 — the case opens and drops away in 3D.
+                        // Opacity is faded ONLY here, on the outermost
+                        // wrapper — caseImgGroupEl and discEl are both
+                        // descendants of caseWrapRef, and nested opacities
+                        // multiply. Fading opacity once at this level fades
+                        // the whole case — front and back layers together —
+                        // at the same visible rate. Floors at 0.15, not 0 —
+                        // CaseDisc and SideImage (which have no opacity
+                        // tween of their own, only what they inherit from
+                        // this wrapper) stay faintly visible in their fully-
+                        // receded pose instead of disappearing entirely.
+                        // OptionsMenu/the title card aren't touched by this
+                        // timeline — they're fixed, always-visible screen
+                        // elements, not part of the case's own fly-apart.
+                        .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0.15, duration: ACT1_DURATION }, 0)
+                        .to(caseImgGroupEl, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
+                        .to(discEl, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
+                        // the ambient logo gets the same fly-out-and-fade
+                        // treatment as the case above — shrinks, recedes,
+                        // and fades to nothing right alongside it. Act 2
+                        // below then brings it back from that vanished
+                        // state to parked-watermark — a full re-emergence,
+                        // the "coming forward out of the depths" counterpart
+                        // to the case flying away. Rotation is deliberately
+                        // left alone — LogoDisc's own tumble already owns
+                        // rotationX/Y/Z on this element continuously; adding
+                        // more rotation here would fight it for the same
+                        // properties.
+                        .to(logoEl, { scale: 0.4, opacity: 0, z: -380, duration: ACT1_DURATION }, 0)
+                        // act 2 — the ambient logo eases into its parked
+                        // position. z continues smoothly from the -380 act 1
+                        // left it at, and animates back toward the viewer
+                        // (60, past its resting z: 0) — the "coming forward"
+                        // counterpart to the case flying away: the case
+                        // recedes into the depth, the logo arrives out of
+                        // it. restX()/restY() are called once (not passed as
+                        // live function references) so only the scroll-
+                        // driven scrub moves this — resizing the window
+                        // doesn't also re-snap it to a new target mid-drag.
                         .to(logoEl, {
-                            scale: 1.2, x: restX(), y: restY(), opacity: 0.16, z: 60, duration: 1,
-                        }, 0);
+                            scale: 3, x: restX(), y: restY(), opacity: 0.16, z: 60, duration: ACT2_DURATION,
+                        }, ACT2_START);
+
+                    // sanity check for future edits to the constants above —
+                    // if ACT2 no longer ends at the timeline's own duration,
+                    // a dead scroll stretch creeps back in.
+                    if (Math.abs(tl.duration() - ACT2_END) > 0.001) {
+                        console.warn('Hero: ambient landing no longer matches the timeline\'s end — the fly-apart may end with dead scroll space.');
+                    }
                 }
 
                 return () => {
                     window.removeEventListener('mousemove', handleMouseMove);
-                    window.removeEventListener('scroll', handleScroll);
                     if (tl) {
                         tl.scrollTrigger?.kill();
                         tl.kill();
@@ -363,7 +411,7 @@ export default function Hero() {
                 </div>
             </section>
 
-            <LogoDisc ref={logoDiscRef} />
+            <LogoDisc ref={logoDiscRef} caseRef={caseDiscRef} />
 
             {/* draggable "open file" windows — outside .pinInner entirely
                 (position: fixed in FileWindow.module.css), so they're never

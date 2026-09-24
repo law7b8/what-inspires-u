@@ -2,14 +2,20 @@
    system (src/styles/buttons.css: flat rectangles, solid fill, opacity-
    fade hover, no 3D bevel), not a from-scratch look. */
 .window {
+  /* one shared size for every real piece of text in the window (titlebar
+     name, body/context copy, the context dropdown) — was 12px/12px/12px/
+     12px/11px, each hardcoded separately, so .noPlayback's fallback text
+     read a notch smaller than everything around it for no real reason.
+     Icon glyphs (.closeBtn's ×, .contextBtn's ▾) stay their own size —
+     those are symbol sizing, not body text. */
+  --window-font-size: 12px;
   position: fixed;
   width: 280px;
   max-width: calc(100vw - 32px);
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
   background: var(--wiy-surface, #ffffff);
-  border-radius: 10px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
-  overflow: hidden; /* clips the titlebar's top corners to the window's own radius; also what makes the native resize handle work */
+  overflow: hidden; /* clips the titlebar's top corners square; also what makes the native resize handle work */
   user-select: none;
   /* every window is resizable from its bottom-right corner */
   resize: both;
@@ -29,7 +35,7 @@
   padding: 0 8px 0 12px;
   background: var(--wiy-accent-solid, #2457d6);
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--window-font-size);
   font-weight: 600;
   cursor: grab;
   touch-action: none; /* pointer events drive the drag directly; no native touch-scroll fighting it */
@@ -78,7 +84,7 @@
   padding: 12px;
   background: var(--wiy-surface, #ffffff);
   color: var(--wiy-ink, #14212b);
-  font-size: 12px;
+  font-size: var(--window-font-size);
 }
 
 .bigImg {
@@ -98,7 +104,7 @@
 
 .context {
   margin: 6px 0 0;
-  font-size: 12px;
+  font-size: var(--window-font-size);
   line-height: 1.4;
   color: var(--wiy-ink-soft, #46596a);
   white-space: pre-wrap;
@@ -138,7 +144,7 @@
 
 .noPlayback p {
   margin: 8px 0 0;
-  font-size: 11px;
+  font-size: var(--window-font-size);
   color: var(--wiy-ink-soft, #46596a);
 }
 
@@ -166,9 +172,6 @@
   min-height: 0;
   max-height: none;
   display: block;
-  /* rounds the titlebar's own top corners (via the base .window's
-     overflow: hidden) to match .body's own radius below */
-  border-radius: 5px;
   /* the base .window rule defaults to a solid white background
      (var(--wiy-surface)) — left unset here, that was showing straight
      through the transparent titlebar (and around .body's edges) instead
@@ -228,11 +231,6 @@
   padding: 0;
   overflow: hidden;
   background: #000000;
-  /* only the bottom corners — the top edge sits flush against .titlebar
-     directly above it (same flex column, no gap), so rounding the top
-     corners here read as a seam/gap in that shared edge instead of one
-     continuous connected surface. */
-  border-radius: 0 0 5px 5px;
 }
 
 .enlarged .bigImg {
@@ -365,7 +363,7 @@
   max-height: 50%;
   overflow: auto;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: var(--window-font-size);
   line-height: 1.4;
   color: #ffffff;
   background: rgba(20, 24, 30, 0.6);
