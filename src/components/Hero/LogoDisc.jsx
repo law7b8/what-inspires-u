@@ -95,12 +95,7 @@ const LogoDisc = forwardRef(function LogoDisc({ caseRef } = {}, ref) {
                 // disappears below 1100px, for one) plus a flat -50px nudge
                 // on .caseWrap, none of which a percentage on THIS element
                 // can predict — the two drifted apart by 70px+ at some
-                // sizes before this. Measured once on mount (same
-                // resize-tolerance the scroll timeline below already has —
-                // restX()/restY() are also baked in once, not live — rather
-                // than a continuous resize listener, which would fight the
-                // scroll timeline's own x/y once scrolling has parked this
-                // element elsewhere). Reads imgGroupRef (.discCaseGroup),
+                // sizes before this. Reads imgGroupRef (.discCaseGroup),
                 // NOT discRef (.disc) — .disc is a fixed-size box that
                 // doesn't actually contain the visible case artwork:
                 // .discCaseGroup is position: absolute inside it with
@@ -108,16 +103,37 @@ const LogoDisc = forwardRef(function LogoDisc({ caseRef } = {}, ref) {
                 // .disc's own overflow: visible) puts it sitting mostly to
                 // .disc's LEFT rather than filling it, so .disc's own rect
                 // center is nowhere near where the case actually renders.
-                const caseEl = caseRef?.current?.imgGroupRef?.current;
-                if (caseEl) {
+                function alignToCase() {
+                    const caseEl = caseRef?.current?.imgGroupRef?.current;
+                    if (!caseEl) return;
                     const caseRect = caseEl.getBoundingClientRect();
                     const caseCenterX = caseRect.left + caseRect.width / 2;
                     const caseCenterY = caseRect.top + caseRect.height / 2;
                     const groupRect = ambientGroup.getBoundingClientRect();
-                    const anchorCenterX = groupRect.left + groupRect.width / 2;
-                    const anchorCenterY = groupRect.top + groupRect.height / 2;
+                    const currentX = gsap.getProperty(ambientGroup, 'x');
+                    const currentY = gsap.getProperty(ambientGroup, 'y');
+                    // back out whatever x/y is already applied so this is
+                    // measuring the element's un-offset anchor position, not
+                    // wherever a previous call already moved it to — makes
+                    // this safe to call repeatedly, not just once
+                    const anchorCenterX = groupRect.left + groupRect.width / 2 - currentX;
+                    const anchorCenterY = groupRect.top + groupRect.height / 2 - currentY;
                     gsap.set(ambientGroup, { x: caseCenterX - anchorCenterX, y: caseCenterY - anchorCenterY });
                 }
+                alignToCase();
+
+                // re-aligns on resize too (window drag, orientation change,
+                // devtools panel toggling), not just once on mount — but
+                // only while still at the top of the page: past that, Hero's
+                // scroll timeline below owns this element's x/y (parking it
+                // at the watermark spot via restX()/restY(), which are
+                // deliberately NOT re-measured live either — see the
+                // scroll-scrubbed comment there), and re-aligning to the
+                // case here would fight that and snap it back mid-scroll.
+                function handleResize() {
+                    if (window.scrollY < 1) alignToCase();
+                }
+                window.addEventListener('resize', handleResize);
 
                 // the logo's own forever tumble — 3-axis (X/Y/Z), its own
                 // independent direction/rate from discSpin.js's LOGO_SPIN
@@ -156,6 +172,7 @@ const LogoDisc = forwardRef(function LogoDisc({ caseRef } = {}, ref) {
                 return () => {
                     boosterRef.current.cancel();
                     window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('resize', handleResize);
                     ambientTumble.kill();
                 };
             });

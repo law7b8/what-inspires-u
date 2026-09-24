@@ -117,8 +117,17 @@
 .logoBg {
     position: absolute;
     left: 75%;
-    width: 1000px;
-    height: 1000px;
+    /* was a flat 1000px with a single @media (max-width: 768px) override
+       jumping straight to 220px — zero scaling at all between those two
+       states (frozen at 1000px anywhere from 769px up, then an abrupt
+       snap down), unlike every other fluid element in this codebase.
+       Same clamp(min, vw-formula, max) shape used throughout Hero/
+       CaseDisc/LogoDisc/PlusMenu: anchored to the same two old fixed
+       values (220px at a 360px-wide phone, 1000px at 1440px+) so nothing
+       actually looks different at either end, it just scales continuously
+       between them now instead of jumping. */
+    width: clamp(220px, -40px + 72.22vw, 1000px);
+    height: clamp(220px, -40px + 72.22vw, 1000px);
     opacity: 0.13;
     pointer-events: none;
     z-index: 1;
@@ -272,11 +281,6 @@
 
     .title img {
         height: 38px;
-    }
-
-    .logoBg {
-        width: 220px;
-        height: 220px;
     }
 
     .dividerRow {

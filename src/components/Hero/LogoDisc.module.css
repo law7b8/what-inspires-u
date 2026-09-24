@@ -5,6 +5,14 @@
    wrapper spans the full viewport so the image's top/left: 50% still
    centers exactly as before. */
 .ambientFloat {
+  /* --ambient-ratio/--ambient-width live here, not on .ambientGroup where
+     they're used, so .ambientShadow below (a sibling of .ambientGroup, not
+     a descendant of it) can read them too — a custom property is only
+     visible to actual descendants of whatever declares it, and siblings
+     can't see each other's. Same reasoning as PlusMenu's --quadrant-gap-x
+     living on .titleCardGroup instead of .menu/.about themselves. */
+  --ambient-ratio: 0.88;
+  --ambient-width: clamp(260px, min(246.67px + 3.7vw, 228px + 8vh), 300px);
   position: fixed;
   /* was also carrying top: -3%; right: 1% — those overrode two of the
      four inset: 0 sides, shifting this viewport-spanning box (and
@@ -69,8 +77,14 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 200px;
-  height: 72px;
+  /* was a flat 200px/72px — same bug .toggleImg had: .ambientGroup (the
+     logo itself) correctly resizes via --ambient-width, but this glow
+     behind it didn't track that at all, so it stayed frozen at one fixed
+     size regardless of window size while the logo it's supposed to be
+     cast by shrank/grew around it. calc() keeps the same ratio this had
+     at --ambient-width's own max (300px): 200/300 and 72/300. */
+  width: calc(var(--ambient-width) * 0.667);
+  height: calc(var(--ambient-width) * 0.24);
   border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(90, 180, 255, 0.4) 0%, rgba(90, 180, 255, 0) 72%);
   filter: blur(6px);
@@ -92,7 +106,8 @@
   top: 53%;
   left: 42.5%;
   transform: translate(-50%, -50%);
-  /* --ambient-ratio (264:300, the real tempoLogo.png proportions from the
+  /* --ambient-ratio/--ambient-width now live on .ambientFloat (see the
+     comment there) — (264:300, the real tempoLogo.png proportions from the
      macOS rendering fix — this fluid-scaling pass had briefly forced it
      back to a square box before merging with that fix) drives height off
      width, so it can't drift out of proportion at any size. Fluid width:
@@ -102,8 +117,6 @@
      --disc-size), anchored to the fix's own values — 260px at a 360px-
      wide/400px-tall viewport (matches its old mobile override) up to
      300px at 1440px-wide/900px-tall (its desktop size). */
-  --ambient-ratio: 0.88;
-  --ambient-width: clamp(260px, min(246.67px + 3.7vw, 228px + 8vh), 300px);
   width: var(--ambient-width);
   height: calc(var(--ambient-width) * var(--ambient-ratio));
   pointer-events: none;

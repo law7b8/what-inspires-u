@@ -21,7 +21,13 @@
      button inside a sheet all read as one consistent typographic system
      instead of several different sizes. */
   --mac-font: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-  --menu-font-size: 13px;
+  /* was a flat 13px — every other size in this scene (the toggle, the
+     options' own height/gaps, the sheet's width/gap/max-height) already
+     scales fluidly with the viewport; this was the one piece of actual
+     TEXT size in the menu that didn't. Same clamp(min, vw-formula, max)
+     shape used throughout, anchored so 1440px+ still reads exactly 13px
+     like before. */
+  --menu-font-size: clamp(10px, 9px + 0.28vw, 13px);
   --xmb-glow: var(--wiy-glow, 160, 200, 255);
   /* rgb of the glow — set per theme in tokens.css */
   /* dark text, not white — --mac-glass below (the option pills' own
@@ -138,8 +144,8 @@
      here (there used to be one, var(--opt-gap)) — that would push the
      toggle down past the flush corner this top: calc() lands it at. */
   position: absolute;
-  right: -14px;
-  top: calc(106% - var(--toggle-size));
+  right: -13px;
+  top: calc(100% - var(--toggle-size));
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -149,6 +155,7 @@
   gap: var(--toggle-gap);
   font-family: var(--mac-font);
   transition: opacity 0.3s ease;
+  overflow: visible;
 }
 
 /* HudControls (bottom-right corner button) sets this on <html> — fades the
@@ -175,7 +182,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   /* clips the image to this square, whatever its own shape */
   transform-origin: top right;
   transition: transform 0.2s ease, scale 0.55s cubic-bezier(0.22, 1, 0.36, 1);
@@ -186,9 +193,20 @@
 }
 
 .toggleImg {
-  width: 115px;
+  position: absolute;
+  top: 6%;
+  left: -2%;
+  /* was a flat 110px — .toggle's own container correctly resizes via
+     --toggle-size (68-125px across viewports), but this absolutely-
+     positioned image inside it didn't track that at all, so the actual
+     visible icon stayed frozen at 110px regardless of window size while
+     only its invisible container shrank/grew around it. calc() keeps the
+     same ratio this had at .toggle's own max size (110/125 = 0.88) so the
+     icon's fit within the button looks identical to before, just fluid
+     now instead of pinned to one specific viewport's worth of --toggle-size. */
+  width: calc(var(--toggle-size) * .97);
   height: auto;
-  object-fit: cover;
+  object-fit: scale-down;
   pointer-events: none;
   /* was cubic-bezier(0.34, 1.56, 0.64, 1) — that curve overshoots past
      180deg then springs back, reading as a bounce on the rotate. Plain
@@ -228,7 +246,7 @@
 
 /* options pop out a touch while the menu is open */
 .menu:has(.toggle[data-open]) .list {
-  scale: 1.04;
+  scale: 1.0;
 }
 
 /* the "what can I do here" blurb — pops out from the title card's own
@@ -243,17 +261,26 @@
    ancestor shared by this and .menu. */
 .about {
   position: absolute;
-  left: 100%;
-  top: 110px;
-  margin-left: var(--quadrant-gap-x, 18px);
+  left: 118%;
+  top: 63%;
   width: max-content;
   /* was a flat 220px, which wrapped "fill this page up with your ideas" onto 2 lines — each line reads better as one row */
-  max-width: min(360px, calc(100vw - 40px));
-  /* safety clamp so a long line can't run off the right edge on narrower viewports */
-  padding: 14px 16px;
+  /* safety clamp so a long line can't run off the right edge on narrower
+     viewports — was calc(100vw - 40px), which only accounted for a margin
+     from the viewport's own right edge and ignored how much space the
+     title card ITSELF already eats on the left before this box even
+     starts (left: 100% of .titleCardGroup, whose own left offset + width
+     together run from ~12px up to ~230px depending on viewport). That let
+     this overflow off the right edge of narrow screens even though the
+     cap looked like it should have prevented it. 180px is a safety margin
+     comfortably above the title card's worst-case (narrowest-viewport)
+     combined left+width, so this stays on-screen at any size instead of
+     being precisely calculated per viewport. */
   box-sizing: border-box;
   font-family: 'MS Sans Serif', Geneva, Tahoma, sans-serif;
-  font-size: 14px;
+  /* was a flat 14px — same fix as --menu-font-size above, same clamp
+     shape, anchored so 1440px+ still reads exactly 14px like before. */
+  font-size: clamp(11px, 10px + 0.28vw, 14px);
   line-height: 1.5;
   letter-spacing: 0.01em;
   color: var(--wiy-ink-soft);
@@ -261,7 +288,6 @@
   font-weight: 300;
   /* skinnier than the default weight */
   text-transform: uppercase;
-  border-radius: 5px;
   /* matches --opt-radius */
   z-index: 2000;
   pointer-events: none;
@@ -294,16 +320,6 @@
 .aboutCredit {
   margin-top: 10px;
   opacity: 0.6;
-}
-
-@media (max-width: 768px) {
-
-  /* no room beside the card once it's stacked for mobile (same reasoning
-     as SideImage/OptionsMenu's own mobile treatment) — the options
-     already explain themselves once opened, this is a nice-to-have */
-  .about {
-    display: none;
-  }
 }
 
 .item {
@@ -358,8 +374,9 @@
   /* dimmed/shrunk by default — the PS3/XMB "shuffle" read: only the option
      under the highlight (data-focused, set by arrow keys/wheel/hover/click
      in PlusMenu.jsx) is at full strength, so cycling through options with
-     more than 2 of them reads as sliding a spotlight down the column */
-  opacity: 0.6;
+     more than 2 of them reads as sliding a spotlight down the column.
+     0.85, not 0.6 — that read as too transparent/washed out at rest. */
+  opacity: 0.85;
   transform: scale(0.94);
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
 }
@@ -391,8 +408,8 @@
    would make this a backdrop root and stop the sheet's own blur.) */
 .sheetWindow {
   position: absolute;
-  top: -40px;
-  left: calc(100% + var(--sheet-gap));
+  top: -38px;
+  left: calc(106% + var(--sheet-gap));
   width: var(--sheet-width);
   padding: 40px 40px 40px 0;
   box-sizing: content-box;

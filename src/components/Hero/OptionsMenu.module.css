@@ -35,7 +35,12 @@
 }
 
 .title {
-  font-size: 22px;
+  /* was a flat 22px, same class of bug found in .toggleImg/.ambientShadow
+     — every other size in this scene (the case, the logo, the toggle)
+     scales fluidly with the viewport; this orbiting text just sat frozen
+     at one size regardless. Same clamp(min, vw-formula, max) shape used
+     throughout, anchored so 1440px+ still reads exactly 22px like before. */
+  font-size: clamp(14px, 11.33px + 0.74vw, 22px);
   font-weight: 500;
   letter-spacing: -0.04em;
   line-height: 0.95;
@@ -107,7 +112,8 @@
   color: #ffffff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   text-decoration: none;
-  font-size: 22px;
+  /* same fix as .title above — was a flat 22px */
+  font-size: clamp(14px, 11.33px + 0.74vw, 22px);
   font-weight: 500;
   letter-spacing: -0.04em;
   display: inline-block;

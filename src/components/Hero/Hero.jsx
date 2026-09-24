@@ -267,10 +267,41 @@ export default function Hero() {
                     // are chosen so ACT2 finishes exactly at the timeline's
                     // own total duration: no dead scroll stretch after the
                     // logo lands where nothing is visibly changing.
+                    // ACT2_DURATION — scroll end (below) stays fixed, so
+                    // this is the one knob for act 2's speed: bigger value
+                    // = more of the timeline's own local duration for the
+                    // same fixed scroll distance = slower. Went 0.10 -> 0.20
+                    // first (still too fast) -> 0.80 now, a real, obvious
+                    // slowdown rather than an incremental one. Act 1 stays
+                    // exactly 0.05 in local time regardless — it just ends
+                    // up an even smaller slice of a bigger total, which
+                    // reads as act 1 finishing quickly and act 2 then taking
+                    // its time, rather than the two feeling like one
+                    // continuous-speed motion.
                     const ACT1_DURATION = 0.05;
                     const ACT2_START = 0.0;
-                    const ACT2_DURATION = 0.10;
+                    const ACT2_DURATION = 0.80;
                     const ACT2_END = ACT2_START + ACT2_DURATION;
+
+                    // the disc's own fly-out spin — a numeric proxy (not
+                    // GSAP's own scale/z/rotationX/rotationY properties on
+                    // discEl directly) because the rotation needs to happen
+                    // around a single diagonal axis running through the
+                    // element's own top-left and bottom-right corners, which
+                    // rotationX + rotationY together don't produce: those
+                    // are two SEPARATE single-axis rotations, and composing
+                    // them simultaneously isn't the same as one rotation
+                    // around their diagonal (3D rotations don't combine that
+                    // way). rotate3d(1, 1, 0, angle) — axis (1, 1, 0) in
+                    // screen coordinates (x right, y down) is exactly that
+                    // diagonal — isn't one of GSAP's own animatable
+                    // properties, so onUpdate composes the full transform
+                    // (translateZ + the diagonal spin + scale) by hand each
+                    // tick instead. angle target (720°, two full turns) and
+                    // duration match the previous rotationX/Y version
+                    // exactly, so the fly-out reads at the same speed as
+                    // before — only the axis changed.
+                    const discFly = { scale: 1, z: 0, angle: 0 };
 
                     tl = gsap.timeline({
                         defaults: { ease: 'none' },
@@ -286,10 +317,12 @@ export default function Hero() {
                             // what read as "the page got longer"). The hero
                             // just scrolls away normally while this plays
                             // out over a short window instead — end below is
-                            // deliberately small (0.18 of a viewport) so the
-                            // whole fly-apart resolves quickly, in the
-                            // scroll distance the page's own resolution
-                            // already had before pinning was added.
+                            // deliberately small (0.18 of a viewport, back to
+                            // its original value — see the ACT2_DURATION
+                            // comment above for why the slowdown lives there
+                            // instead of here now) so the whole fly-apart
+                            // resolves quickly relative to the page's own
+                            // scroll distance.
                             end: () => '+=' + Math.round(window.innerHeight * 0.18),
                             scrub: 0.3,
                             invalidateOnRefresh: true,
@@ -316,7 +349,14 @@ export default function Hero() {
                         // elements, not part of the case's own fly-apart.
                         .to(caseWrapRef.current, { scale: 0.72, z: -380, opacity: 0.15, duration: ACT1_DURATION }, 0)
                         .to(caseImgGroupEl, { z: -520, scale: 0.5, duration: ACT1_DURATION }, 0)
-                        .to(discEl, { scale: 1.1, z: 30, rotationX: 160, rotationY: 160, duration: ACT1_DURATION }, 0)
+                        .to(discFly, {
+                            scale: 1.1, z: 30, angle: 720, duration: ACT1_DURATION,
+                            onUpdate: () => {
+                                gsap.set(discEl, {
+                                    transform: `translateZ(${discFly.z}px) rotate3d(1, 1, 0, ${discFly.angle}deg) scale(${discFly.scale})`,
+                                });
+                            },
+                        }, 0)
                         // the ambient logo gets the same fly-out-and-fade
                         // treatment as the case above — shrinks, recedes,
                         // and fades to nothing right alongside it. Act 2
