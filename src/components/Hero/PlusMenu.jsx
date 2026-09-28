@@ -149,8 +149,10 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
     }, [open]);
 
     // arrow keys shuffle the highlight up/down through the options
-    // (wrapping at both ends); Enter/Space opens the highlighted one's
-    // sheet, same as clicking it. Escape backs out one level at a time.
+    // (wrapping at both ends); Enter opens the highlighted one's sheet, same
+    // as clicking it. Escape backs out one level at a time. Space is NOT
+    // bound here — this listener is on window, so its preventDefault() was
+    // swallowing every space typed into a sheet's name/context fields.
     useEffect(() => {
         if (!open) return;
         const onKey = (e) => {
@@ -160,7 +162,7 @@ export default function PlusMenu({ onLaunchMp3, onLaunchImg }) {
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 moveFocus(-1);
-            } else if (e.key === 'Enter' || e.key === ' ') {
+            } else if (e.key === 'Enter') {
                 e.preventDefault();
                 const opt = OPTIONS[focusedIndex];
                 setSheet((s) => (s === opt.id ? null : opt.id));

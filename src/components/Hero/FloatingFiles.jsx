@@ -57,7 +57,16 @@ export default function FloatingFiles({ files, onOpen }) {
             if (!el) continue;
             const w = el.offsetWidth;
             const h = el.offsetHeight;
-            const sim = { el, w, h, vx: 0, vy: 0, cruise: rand(40, 75), held: false };
+            // the button is 100px wide but the visible thumbnail inside it
+            // (.file > .thumbWrap, same structure for img and mp3 files) is
+            // only 76px, centered — so the button's own box has ~12px of
+            // empty slack on each side. Bouncing/clamping against the box
+            // made files turn around that far short of the screen edge.
+            // offsetWidth is layout width, unaffected by the pop-in scale
+            // tween running on el.firstChild, so it's safe to read now.
+            const thumbWrap = el.firstChild?.firstChild;
+            const inset = thumbWrap ? Math.max(0, (w - thumbWrap.offsetWidth) / 2) : 0;
+            const sim = { el, w, h, inset, vx: 0, vy: 0, cruise: rand(40, 75), held: false };
 
             if (reduced) {
                 // no flying: just settle somewhere in the hero
@@ -120,8 +129,10 @@ export default function FloatingFiles({ files, onOpen }) {
 
                 // bounce off the hero's edges (clamped, so a resize or a
                 // launch from outside the box pulls it back in)
-                if (s.x < 0) { s.x = 0; s.vx = Math.abs(s.vx); }
-                else if (s.x + s.w > W) { s.x = Math.max(0, W - s.w); s.vx = -Math.abs(s.vx); }
+                // left/right walls sit at the VISIBLE thumbnail's edge, not
+                // the button box's — see s.inset where sims are created
+                if (s.x < -s.inset) { s.x = -s.inset; s.vx = Math.abs(s.vx); }
+                else if (s.x + s.w > W + s.inset) { s.x = Math.max(-s.inset, W - s.w + s.inset); s.vx = -Math.abs(s.vx); }
                 if (s.y < 0) { s.y = 0; s.vy = Math.abs(s.vy); }
                 else if (s.y + s.h > H) { s.y = Math.max(0, H - s.h); s.vy = -Math.abs(s.vy); }
 
@@ -183,7 +194,7 @@ export default function FloatingFiles({ files, onOpen }) {
         drag.vy = (py - drag.lastY) / (dt / 1000);
         drag.lastX = px; drag.lastY = py; drag.lastT = now;
 
-        sim.x = gsap.utils.clamp(0, Math.max(0, layerRef.current.clientWidth - sim.w), px - drag.grabDX);
+        sim.x = gsap.utils.clamp(-sim.inset, Math.max(-sim.inset, layerRef.current.clientWidth - sim.w + sim.inset), px - drag.grabDX);
         sim.y = gsap.utils.clamp(0, Math.max(0, layerRef.current.clientHeight - sim.h), py - drag.grabDY);
         sim.el.style.transform = `translate3d(${sim.x}px, ${sim.y}px, 0)`;
     };

@@ -198,7 +198,7 @@ export default function FileWindow({ data, x, y, width, zIndex, origin, onClose,
                 </button>
             </div>
 
-            <div className={styles.body}>
+            <div className={`${styles.body} ${isImg ? styles.bodyImg : ''}`}>
                 {isImg ? (
                     <>
                         <img className={styles.bigImg} src={data.cover} alt="" draggable={false} />

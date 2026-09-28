@@ -18,8 +18,8 @@ gsap.registerPlugin(ScrollTrigger);
 const restX = () => window.innerWidth * 0.15;
 const restY = () => window.innerHeight * 0.08;
 
-const MAX_FLOATING_FILES = 8;
-const MAX_OPEN_WINDOWS = 25;
+const MAX_FLOATING_FILES = 20;
+const MAX_OPEN_WINDOWS = 20;
 // how many diagonal steps the spawn-position cascade takes before looping
 // back to the first spot — separate from MAX_OPEN_WINDOWS so raising that
 // cap doesn't also march new windows' starting position further and
